@@ -25,7 +25,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cast"
 
-	"github.com/banzaicloud/bank-vaults/internal/configuration"
+	"github.com/bank-vaults/vault-secrets-webhook/internal/configuration"
 )
 
 const (

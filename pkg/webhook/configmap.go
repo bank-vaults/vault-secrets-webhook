@@ -20,7 +20,7 @@ import (
 	"emperror.dev/errors"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/banzaicloud/bank-vaults/internal/injector"
+	"github.com/bank-vaults/vault-secrets-webhook/internal/injector"
 )
 
 func configMapNeedsMutation(configMap *corev1.ConfigMap) bool {

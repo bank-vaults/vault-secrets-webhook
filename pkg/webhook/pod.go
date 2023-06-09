@@ -16,18 +16,19 @@ package webhook
 
 import (
 	"context"
-	"emperror.dev/errors"
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"strings"
+
+	"emperror.dev/errors"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeVer "k8s.io/apimachinery/pkg/version"
-	"strconv"
-	"strings"
 
-	"github.com/banzaicloud/bank-vaults/internal/injector"
+	"github.com/bank-vaults/vault-secrets-webhook/internal/injector"
 )
 
 const (

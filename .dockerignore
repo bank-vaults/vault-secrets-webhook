@@ -1,8 +1,7 @@
-Dockerfile*
-.circleci/
-.git/
-bin/
-docs/
+Dockerfile
+/.github/
+/bin/
+build/
 vendor/
 test/
 *.yaml

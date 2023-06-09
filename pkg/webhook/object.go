@@ -20,7 +20,7 @@ import (
 	"emperror.dev/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
-	"github.com/banzaicloud/bank-vaults/internal/injector"
+	"github.com/bank-vaults/vault-secrets-webhook/internal/injector"
 )
 
 type element interface {

@@ -20,7 +20,7 @@ certificate:
   # use extra names if you want use the webhook via an ingress or a loadbalancer
 
 image:
-  repository: ghcr.io/banzaicloud/vault-secrets-webhook
+  repository: ghcr.io/bank-vaults/vault-secrets-webhook
   # tag: ""
   pullPolicy: IfNotPresent
   imagePullSecrets: []
