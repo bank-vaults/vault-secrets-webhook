@@ -65,35 +65,6 @@ func TestMain(m *testing.M) {
 	os.Exit(exitCode)
 }
 
-func TestVaultHelmChart(t *testing.T) {
-	releaseName := "vault"
-	kubectlOptions := k8s.NewKubectlOptions("", "", "default")
-
-	// Setup the args for helm.
-	options := &helm.Options{
-		KubectlOptions: kubectlOptions,
-		SetValues: map[string]string{
-			"unsealer.image.tag": "latest",
-			"unsealer.args[0]":   "--mode",
-			"unsealer.args[1]":   "k8s",
-			"unsealer.args[2]":   "--k8s-secret-namespace",
-			"unsealer.args[3]":   kubectlOptions.Namespace,
-			"unsealer.args[4]":   "--k8s-secret-name",
-			"unsealer.args[5]":   "bank-vaults",
-			"ingress.enabled":    "true",
-			"ingress.hosts[0]":   "localhost",
-			"image.tag":          vaultVersion,
-		},
-	}
-
-	// Deploy the chart using `helm install`
-	helm.Install(t, options, "../charts/vault", releaseName)
-	defer helm.Delete(t, options, releaseName, true)
-
-	// Check the Vault pod to be up and running
-	k8s.WaitUntilPodAvailable(t, kubectlOptions, "vault-0", 5, 10*time.Second)
-}
-
 func TestWebhook(t *testing.T) {
 	// Create a different namespace for the webhook
 	webhookKubectlOptions := k8s.NewKubectlOptions("", "", "webhook")
@@ -107,10 +78,10 @@ func TestWebhook(t *testing.T) {
 	operatorHelmOptions := &helm.Options{
 		Version:        operatorVersion,
 		KubectlOptions: defaultKubectlOptions,
-		SetValues: map[string]string{
-			"image.tag":           "latest",
-			"image.bankVaultsTag": "latest",
-			"image.pullPolicy":    "IfNotPresent",
+		SetValues:      map[string]string{
+			// "image.tag": operatorVersion,
+			// "image.bankVaultsTag": "latest",
+			// "image.pullPolicy": "IfNotPresent",
 		},
 	}
 
@@ -133,13 +104,18 @@ func TestWebhook(t *testing.T) {
 
 	k8s.WaitUntilPodAvailable(t, defaultKubectlOptions, "vault-0", 12, 10*time.Second)
 
+	webhookVersion := "latest"
+	if v := os.Getenv("WEBHOOK_VERSION"); v != "" {
+		webhookVersion = v
+	}
+
 	// Deploy webhook
 	webhookHelmOptions := &helm.Options{
 		KubectlOptions: webhookKubectlOptions,
 		SetValues: map[string]string{
 			"replicaCount":           "1",
-			"image.tag":              "latest",
-			"image.pullPolicy":       "IfNotPresent",
+			"image.tag":              webhookVersion,
+			"image.pullPolicy":       "Never",
 			"configMapMutation":      "true",
 			"configmapFailurePolicy": "Fail",
 			"podsFailurePolicy":      "Fail",

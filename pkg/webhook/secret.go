@@ -23,7 +23,7 @@ import (
 	"emperror.dev/errors"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/banzaicloud/bank-vaults/internal/injector"
+	"github.com/bank-vaults/vault-secrets-webhook/internal/injector"
 )
 
 type dockerCredentials struct {
@@ -164,12 +164,12 @@ func (mw *MutatingWebhook) mutateDockerCreds(secret *corev1.Secret, dc *dockerCr
 		}
 	}
 
-	marshalled, err := json.Marshal(assembled)
+	marshaled, err := json.Marshal(assembled)
 	if err != nil {
 		return errors.Wrap(err, "marshaling dockerconfig failed")
 	}
 
-	secret.Data[corev1.DockerConfigJsonKey] = marshalled
+	secret.Data[corev1.DockerConfigJsonKey] = marshaled
 
 	return nil
 }

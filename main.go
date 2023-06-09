@@ -33,7 +33,7 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	kubernetesConfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 
-	"github.com/banzaicloud/bank-vaults/pkg/webhook"
+	"github.com/bank-vaults/vault-secrets-webhook/pkg/webhook"
 )
 
 func init() {
