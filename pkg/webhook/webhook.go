@@ -17,7 +17,6 @@ package webhook
 import (
 	"context"
 	"crypto/x509"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
@@ -38,7 +37,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	logrusadapter "logur.dev/adapter/logrus"
 
-	"github.com/banzaicloud/bank-vaults/internal/injector"
+	"github.com/bank-vaults/vault-secrets-webhook/internal/injector"
 )
 
 type MutatingWebhook struct {
@@ -116,9 +115,9 @@ func (mw *MutatingWebhook) lookForEnvFrom(envFrom []corev1.EnvFromSource, ns str
 			if err != nil {
 				if apierrors.IsNotFound(err) || (ef.ConfigMapRef.Optional != nil && *ef.ConfigMapRef.Optional) {
 					continue
-				} else {
-					return envVars, err
 				}
+
+				return envVars, err
 			}
 			for key, value := range data {
 				if hasVaultPrefix(value) || injector.HasInlineVaultDelimiters(value) {
@@ -135,9 +134,9 @@ func (mw *MutatingWebhook) lookForEnvFrom(envFrom []corev1.EnvFromSource, ns str
 			if err != nil {
 				if apierrors.IsNotFound(err) || (ef.SecretRef.Optional != nil && *ef.SecretRef.Optional) {
 					continue
-				} else {
-					return envVars, err
 				}
+
+				return envVars, err
 			}
 			for name, v := range data {
 				value := string(v)
@@ -299,7 +298,7 @@ func (mw *MutatingWebhook) ServeMetrics(addr string, handler http.Handler) {
 func NewMutatingWebhook(logger *logrus.Entry, k8sClient kubernetes.Interface) (*MutatingWebhook, error) {
 	namespace := os.Getenv("KUBERNETES_NAMESPACE") // only for kurun
 	if namespace == "" {
-		namespaceBytes, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
+		namespaceBytes, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
 		if err != nil {
 			return nil, errors.Wrap(err, "error reading k8s namespace")
 		}
