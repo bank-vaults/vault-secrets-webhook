@@ -12,9 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build integration
-// +build integration
-
 package injector
 
 import (
@@ -37,10 +34,13 @@ func assertKeyDoesNotExist(t *testing.T, m map[string]string, k string) {
 }
 
 func TestSecretInjector(t *testing.T) {
-	t.Parallel()
+	if addr := os.Getenv("VAULT_ADDR"); addr == "" {
+		t.Skip("skipping test: no VAULT_ADDR environment variable is set")
+	}
 
-	err := os.Setenv("VAULT_ADDR", "http://localhost:8200")
-	assert.NoError(t, err)
+	if testing.Short() {
+		t.Skip("skipping integration test due to -short")
+	}
 
 	config := vaultapi.DefaultConfig()
 	if config.Error != nil {
@@ -125,7 +125,8 @@ func TestSecretInjector(t *testing.T) {
 	})
 
 	t.Run("correct path but missing secret", func(t *testing.T) {
-		t.Parallel()
+		// TODO: fix race condition
+		// t.Parallel()
 
 		references := map[string]string{
 			"SECRET": "vault:secret/data/supersecret#password",
@@ -142,7 +143,8 @@ func TestSecretInjector(t *testing.T) {
 	})
 
 	t.Run("incorrect kv2 path", func(t *testing.T) {
-		t.Parallel()
+		// TODO: fix race condition
+		// t.Parallel()
 
 		references := map[string]string{
 			"SECRET": "vault:secret/get/data#data",
@@ -160,10 +162,13 @@ func TestSecretInjector(t *testing.T) {
 }
 
 func TestSecretInjectorFromPath(t *testing.T) {
-	t.Parallel()
+	if addr := os.Getenv("VAULT_ADDR"); addr == "" {
+		t.Skip("skipping test: no VAULT_ADDR environment variable is set")
+	}
 
-	err := os.Setenv("VAULT_ADDR", "http://localhost:8200")
-	assert.NoError(t, err)
+	if testing.Short() {
+		t.Skip("skipping integration test due to -short")
+	}
 
 	config := vaultapi.DefaultConfig()
 	if config.Error != nil {
@@ -189,7 +194,8 @@ func TestSecretInjectorFromPath(t *testing.T) {
 	injector := NewSecretInjector(Config{}, client, nil, logrus.New())
 
 	t.Run("success", func(t *testing.T) {
-		t.Parallel()
+		// TODO: fix race condition
+		// t.Parallel()
 
 		paths := "secret/data/account1"
 
@@ -210,7 +216,8 @@ func TestSecretInjectorFromPath(t *testing.T) {
 	})
 
 	t.Run("success multiple paths", func(t *testing.T) {
-		t.Parallel()
+		// TODO: fix race condition
+		// t.Parallel()
 
 		paths := "secret/data/account1,secret/data/account2"
 		results := map[string]string{}
@@ -232,7 +239,8 @@ func TestSecretInjectorFromPath(t *testing.T) {
 	})
 
 	t.Run("incorrect kv2 path", func(t *testing.T) {
-		t.Parallel()
+		// TODO: fix race condition
+		// t.Parallel()
 
 		paths := "secret/data/doesnotexist"
 

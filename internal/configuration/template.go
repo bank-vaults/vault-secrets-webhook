@@ -19,25 +19,22 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"strings"
 	"text/template"
 
 	cloudkms "cloud.google.com/go/kms/apiv1"
+	"cloud.google.com/go/kms/apiv1/kmspb"
 	"emperror.dev/errors"
 	"github.com/Masterminds/sprig/v3"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/kms"
 	"gocloud.dev/blob"
-
-	// These drivers are supported currently by the blob function
-	_ "gocloud.dev/blob/azureblob"
-	_ "gocloud.dev/blob/fileblob"
-	_ "gocloud.dev/blob/gcsblob"
-	_ "gocloud.dev/blob/s3blob"
-	kmspb "google.golang.org/genproto/googleapis/cloud/kms/v1"
+	_ "gocloud.dev/blob/azureblob" // Azure blob driver
+	_ "gocloud.dev/blob/fileblob"  // File blob driver
+	_ "gocloud.dev/blob/gcsblob"   // GCS blob driver
+	_ "gocloud.dev/blob/s3blob"    // S3 blob driver
 )
 
 const (
@@ -190,7 +187,7 @@ func gcpKmsDecrypt(encodedString string, projectID string, location string, keyR
 }
 
 func fileContent(path string) (string, error) {
-	r, err := ioutil.ReadFile(path)
+	r, err := os.ReadFile(path)
 	if err != nil {
 		return "", err
 	}

@@ -1,139 +1,118 @@
 # A Self-Documenting Makefile: http://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 
-OS = $(shell uname)
-
-DOCKER_BUILD_EXTRA_ARGS ?=
-# Export HOST_NETWORK=1 if you want to build the docker images with host network (useful when using some VPNs)
-ifeq (${HOST_NETWORK}, 1)
-	DOCKER_BUILD_EXTRA_ARGS += --network host
-endif
-
-# Project variables
-PACKAGE = github.com/banzaicloud/bank-vaults
-BINARY_NAME ?= bank-vaults
-DOCKER_REGISTRY ?= ghcr.io/banzaicloud
-DOCKER_IMAGE = ${DOCKER_REGISTRY}/bank-vaults
-WEBHOOK_DOCKER_IMAGE = ${DOCKER_REGISTRY}/vault-secrets-webhook
-
-# Build variables
-BUILD_DIR ?= build
-BUILD_PACKAGE = ${PACKAGE}/cmd/...
-VERSION ?= $(shell echo `git symbolic-ref -q --short HEAD || git describe --tags --exact-match` | tr '[/]' '-')
-COMMIT_HASH ?= $(shell git rev-parse --short HEAD 2>/dev/null)
-BUILD_DATE ?= $(shell date +%FT%T%z)
-LDFLAGS += -X main.version=${VERSION} -X main.commitHash=${COMMIT_HASH} -X main.buildDate=${BUILD_DATE}
-export CGO_ENABLED ?= 1
-export GOOS = $(shell go env GOOS)
-ifeq (${VERBOSE}, 1)
-	GOARGS += -v
-endif
-
-# Docker variables
-DOCKER_TAG ?= ${VERSION}
+export PATH := $(abspath bin/):${PATH}
 
 # Dependency versions
-GOTESTSUM_VERSION = 0.4.0
-GOLANGCI_VERSION = 1.52.2
+GOLANGCI_VERSION = 1.53.1
 LICENSEI_VERSION = 0.8.0
-CODE_GENERATOR_VERSION = 0.27.1
-CONTROLLER_GEN_VERSION = v0.11.4
-
-GOLANG_VERSION = 1.19.2
-
-## include "generic" targets
-include main-targets.mk
+KIND_VERSION = 0.18.0
+KURUN_VERSION = 0.7.0
+HELM_DOCS_VERSION = 1.11.0
 
 .PHONY: up
-up: ## Set up the development environment
+up: ## Start development environment
+	kind create cluster
+	docker compose up -d
+
+.PHONY: stop
+stop: ## Stop development environment
+	# TODO: consider using k3d instead
+	kind delete cluster
+	docker compose stop
 
 .PHONY: down
-down: clean ## Destroy the development environment
+down: ## Destroy development environment
+	kind delete cluster
+	docker compose down -v
 
+.PHONY: build
+build: ## Build binary
+	@mkdir -p build
+	go build -race -o build/webhook .
 
-.PHONY: reset
-reset: down up ## Reset the development environment
+.PHONY: run
+run: ## Run the operator locally talking to a Kubernetes cluster
+	KUBERNETES_NAMESPACE=vault-infra go run .
 
-
-.PHONY: build-release
-build-release: LDFLAGS += -w
-build-release: build ## Build a binary without debug information
-
-.PHONY: build-debug
-build-debug: GOARGS += -gcflags "all=-N -l"
-build-debug: BINARY_NAME_SUFFIX += debug
-build-debug: build ## Build a binary with remote debugging capabilities
-
-.PHONY: docker
-docker: ## Build a Docker image
-	docker build ${DOCKER_BUILD_EXTRA_ARGS} -t ${DOCKER_IMAGE}:${DOCKER_TAG} -f Dockerfile .
-ifeq (${DOCKER_LATEST}, 1)
-	docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest
-endif
-
-.PHONY: image
-image: ## Build an OCI image with buildah
-	buildah bud -t ${DOCKER_IMAGE}:${DOCKER_TAG} -f Dockerfile .
-ifeq (${IMAGE_LATEST}, 1)
-	buildah tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest
-endif
-
-.PHONY: docker-webhook
-docker-webhook: ## Build a Docker-webhook image
-	docker build ${DOCKER_BUILD_EXTRA_ARGS} -t ${WEBHOOK_DOCKER_IMAGE}:${DOCKER_TAG} -f Dockerfile.webhook .
-ifeq (${DOCKER_LATEST}, 1)
-	docker tag ${WEBHOOK_DOCKER_IMAGE}:${DOCKER_TAG} ${WEBHOOK_DOCKER_IMAGE}:latest
-endif
-
-.PHONY: image-webhook
-image-webhook: ## Build a webhook OCI image
-	buildah bud -t ${WEBHOOK_DOCKER_IMAGE}:${DOCKER_TAG} -f Dockerfile.webhook .
-ifeq (${IMAGE_LATEST}, 1)
-	buildah tag ${WEBHOOK_DOCKER_IMAGE}:${DOCKER_TAG} ${WEBHOOK_DOCKER_IMAGE}:latest
-endif
-
-.PHONY: docker-push
-docker-push: ## Push a Docker image
-	docker push ${DOCKER_IMAGE}:${DOCKER_TAG}
-ifeq (${DOCKER_LATEST}, 1)
-	docker push ${DOCKER_IMAGE}:latest
-endif
-
-.PHONY: test-%
-test-%: ## Run a specific test suite
-	@${MAKE} VERBOSE=0 GOTAGS=$* test
-
-
-release-%: ## Release a new version
-	git tag -m 'Release $*' $*
-
-	@echo "Version updated to $*!"
-	@echo
-	@echo "To push the changes execute the following:"
-	@echo
-	@echo "git push; git push origin $*"
-
-.PHONY: patch
-patch: ## Release a new patch version
-	@${MAKE} release-$(shell git describe --abbrev=0 --tags | awk -F'[ .]' '{print $$1"."$$2"."$$3+1}')
-
-.PHONY: minor
-minor: ## Release a new minor version
-	@${MAKE} release-$(shell git describe --abbrev=0 --tags | awk -F'[ .]' '{print $$1"."$$2+1".0"}')
-
-.PHONY: major
-major: ## Release a new major version
-	@${MAKE} release-$(shell git describe --abbrev=0 --tags | awk -F'[ .]' '{print $$1+1".0.0"}')
-
-.PHONY: webhook-forward
-webhook-forward: ## Install the webhook chart and kurun to port-forward the local webhook into Kubernetes
+.PHONY: forward
+forward: ## Install the webhook chart and kurun to port-forward the local webhook into Kubernetes
 	kubectl create namespace vault-infra --dry-run -o yaml | kubectl apply -f -
 	kubectl label namespaces vault-infra name=vault-infra --overwrite
 	helm upgrade --install vault-secrets-webhook charts/vault-secrets-webhook --namespace vault-infra --set replicaCount=0 --set podsFailurePolicy=Fail --set secretsFailurePolicy=Fail --set configMapMutation=true --set configMapFailurePolicy=Fail
 	kurun port-forward localhost:8443 --namespace vault-infra --servicename vault-secrets-webhook --tlssecret vault-secrets-webhook-webhook-tls
 
-.PHONY: webhook-run ## Run run the webhook locally
-webhook-run:
-	KUBERNETES_NAMESPACE=vault-infra go run ./cmd/vault-secrets-webhook
+.PHONY: clean
+clean: ## Clean operator resources from a Kubernetes cluster
+	kubectl delete -f deploy/crd.yaml
+	kubectl delete -f deploy/rbac.yaml
 
-.PHONY: webhook-up ## Run the webhook and `kurun port-forward` in foreground. Use with make -j webhook-up
-webhook-up: webhook-run webhook-forward
+.PHONY: artifacts
+artifacts: container-image
+artifacts: ## Build artifacts
+
+.PHONY: container-image
+container-image: ## Build container image
+	docker build .
+
+.PHONY: check
+check: test lint ## Run checks (tests and linters)
+
+.PHONY: test
+test: ## Run tests
+	go test -race -v ./...
+
+.PHONY: test-acceptance
+test-acceptance: ## Run acceptance tests
+	go test -race -v -timeout 900s -tags kubeall ./test
+
+.PHONY: lint
+lint: ## Run linter
+	golangci-lint run ${LINT_ARGS}
+
+.PHONY: fmt
+fmt: ## Format code
+	golangci-lint run --fix
+
+.PHONY: license-check
+license-check: ## Run license check
+	licensei check
+	licensei header
+
+.PHONY: generate
+generate: generate-helm-docs
+generate: ## Run generation jobs
+
+.PHONY: generate-helm-docs
+generate-helm-docs:
+	helm-docs -s file -c charts/ -t README.md.gotmpl
+
+deps: bin/golangci-lint bin/licensei bin/kind bin/kurun bin/helm-docs
+deps: ## Install dependencies
+
+bin/golangci-lint:
+	@mkdir -p bin
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | bash -s -- v${GOLANGCI_VERSION}
+
+bin/licensei:
+	@mkdir -p bin
+	curl -sfL https://raw.githubusercontent.com/goph/licensei/master/install.sh | bash -s -- v${LICENSEI_VERSION}
+
+bin/kind:
+	@mkdir -p bin
+	curl -Lo bin/kind https://kind.sigs.k8s.io/dl/v${KIND_VERSION}/kind-$(shell uname -s | tr '[:upper:]' '[:lower:]')-$(shell uname -m | sed -e "s/aarch64/arm64/; s/x86_64/amd64/")
+	@chmod +x bin/kind
+
+bin/kurun:
+	@mkdir -p bin
+	curl -Lo bin/kurun https://github.com/banzaicloud/kurun/releases/download/${KURUN_VERSION}/kurun-$(shell uname -s | tr '[:upper:]' '[:lower:]')-$(shell uname -m | sed -e "s/aarch64/arm64/; s/x86_64/amd64/")
+	@chmod +x bin/kurun
+
+bin/helm-docs:
+	@mkdir -p bin
+	curl -L https://github.com/norwoodj/helm-docs/releases/download/v${HELM_DOCS_VERSION}/helm-docs_${HELM_DOCS_VERSION}_$(shell uname)_x86_64.tar.gz | tar -zOxf - helm-docs > ./bin/helm-docs
+	@chmod +x bin/helm-docs
+
+.PHONY: help
+.DEFAULT_GOAL := help
+help:
+	@grep -h -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-10s\033[0m %s\n", $$1, $$2}'
