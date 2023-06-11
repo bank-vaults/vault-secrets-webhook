@@ -80,7 +80,7 @@ spec:
               value: "debug"
             {{- end }}
             - name: VAULT_ENV_IMAGE
-              value: "{{ .Values.vaultEnv.repository }}:{{ include "vault-secrets-webhook.vault-env.version" . }}"
+              value: "{{ .Values.vaultEnv.repository }}:{{ .Values.vaultEnv.tag }}"
             {{- range $key, $value := .Values.env }}
             - name: {{ $key }}
               value: {{ $value | quote }}

@@ -161,6 +161,42 @@ jobs:
       - name: Dependency Review
         uses: actions/dependency-review-action@1360a344ccb0ab6e9475edef90ad2f46bf8003b1 # v3.0.6
 
+  e2e-test:
+    name: E2E test
+    runs-on: ubuntu-latest
+    needs: [artifacts]
+    strategy:
+      matrix:
+        k8s_version: ["v1.24.13", "v1.25.9", "v1.26.4", "v1.27.1" ]
+        # vault_version: ["1.10.11", "1.11.10", "1.12.6", "1.13.2"]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
+
+      - name: Set up Nix
+        uses: cachix/install-nix-action@4b933aa7ebcc94a6174cf1364864e957b4910265 # v21
+        with:
+          extra_nix_config: |
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+
+      - name: Prepare Nix shell
+        run: nix develop --impure .#ci
+
+      - name: Download operator docker image
+        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
+        with:
+          name: "[container-image] Docker tarball"
+
+      - name: Test
+        run: nix develop --impure .#ci -c make test-e2e
+        env:
+          KIND_K8S_VERSION: ${{ matrix.k8s_version }}
+          LOAD_IMAGE_ARCHIVE: ${{ github.workspace }}/docker.tar
+          # VAULT_VERSION: ${{ matrix.vault_version }}
+          WEBHOOK_VERSION: ${{ needs.artifacts.outputs.container-image-tag }}
+          LOG_VERBOSE: "true"
+
   acceptance-test:
     name: Acceptance test
     runs-on: ubuntu-latest

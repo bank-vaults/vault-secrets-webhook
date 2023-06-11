@@ -2,6 +2,8 @@
 
 export PATH := $(abspath bin/):${PATH}
 
+CONTAINER_IMAGE_REF = ghcr.io/bank-vaults/vault-secrets-webhook:dev
+
 # Dependency versions
 GOLANGCI_VERSION = 1.53.1
 LICENSEI_VERSION = 0.8.0
@@ -52,7 +54,7 @@ artifacts: ## Build artifacts
 
 .PHONY: container-image
 container-image: ## Build container image
-	docker build .
+	docker build -t ${CONTAINER_IMAGE_REF} .
 
 .PHONY: check
 check: test lint ## Run checks (tests and linters)
@@ -64,6 +66,14 @@ test: ## Run tests
 .PHONY: test-acceptance
 test-acceptance: ## Run acceptance tests
 	go test -race -v -timeout 900s -tags kubeall ./test
+
+.PHONY: test-e2e
+test-e2e: ## Run e2e tests
+	go test -race -v -timeout 900s -tags e2e ./e2e/
+
+.PHONY: test-e2e-local
+test-e2e-local: container-image ## Run e2e tests locally
+	LOAD_IMAGE=${CONTAINER_IMAGE_REF} WEBHOOK_VERSION=dev ${MAKE} test-e2e
 
 .PHONY: lint
 lint: ## Run linter
