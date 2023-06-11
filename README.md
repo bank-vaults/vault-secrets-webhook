@@ -33,7 +33,7 @@ Run the test suite:
 
 ```shell
 make test
-make test-acceptance
+make test-e2e-local
 ```
 
 Run the linter:

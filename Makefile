@@ -63,10 +63,6 @@ check: test lint ## Run checks (tests and linters)
 test: ## Run tests
 	go test -race -v ./...
 
-.PHONY: test-acceptance
-test-acceptance: ## Run acceptance tests
-	go test -race -v -timeout 900s -tags kubeall ./test
-
 .PHONY: test-e2e
 test-e2e: ## Run e2e tests
 	go test -race -v -timeout 900s -tags e2e ./e2e/
