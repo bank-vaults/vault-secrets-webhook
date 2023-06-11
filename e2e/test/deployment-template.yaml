@@ -42,16 +42,16 @@ data:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: vault-test
+  name: test-deployment-template
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: test-templating
+      app.kubernetes.io/name: test-deployment-template
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: test-templating
+        app.kubernetes.io/name: test-deployment-template
       annotations:
         vault.security.banzaicloud.io/vault-addr: "https://vault:8200" # optional, the address of the Vault service, default values is https://vault:8200
         vault.security.banzaicloud.io/vault-role: "default" # optional, the default value is the name of the ServiceAccount the Pod runs in, in case of Secrets and ConfigMaps it is "default"
@@ -65,7 +65,7 @@ spec:
       containers:
       - name: alpine
         image: alpine
-        command: ["sh", "-c", "cat /vault/secrets/config.yaml && echo going to sleep... && sleep 1000"]
+        command: ["sh", "-c", "cat /vault/secrets/config.yaml && echo going to sleep... && sleep 10000"]
         resources:
           limits:
             cpu: 20m

@@ -4,52 +4,7 @@ metadata:
   name: "vault"
 spec:
   size: 1
-  image: vault:1.6.2
-  # specify a custom bank-vaults image with bankVaultsImage:
-  # bankVaultsImage: ghcr.io/banzaicloud/bank-vaults:latest
-
-  # Common annotations for all created resources
-  annotations:
-    common/annotation: "true"
-
-  # Vault Pods , Services and TLS Secret annotations
-  vaultAnnotations:
-    type/instance: "vault"
-
-  # Vault Configurer Pods and Services annotations
-  vaultConfigurerAnnotations:
-    type/instance: "vaultconfigurer"
-
-  # Vault Pods , Services and TLS Secret labels
-  vaultLabels:
-    example.com/log-format: "json"
-
-  # Vault Configurer Pods and Services labels
-  vaultConfigurerLabels:
-    example.com/log-format: "string"
-
-  # Support for affinity Rules, same as in PodSpec
-  # affinity:
-  #   nodeAffinity:
-  #     requiredDuringSchedulingIgnoredDuringExecution:
-  #       nodeSelectorTerms:
-  #       - matchExpressions:
-  #         - key : "node-role.kubernetes.io/your_role"
-  #           operator: In
-  #           values: ["true"]
-
-  # Support for pod nodeSelector rules to control which nodes can be chosen to run
-  # the given pods
-  # nodeSelector:
-  #   "node-role.kubernetes.io/your_role": "true"
-
-  # Support for node tolerations that work together with node taints to control
-  # the pods that can like on a node
-  # tolerations:
-  # - effect: NoSchedule
-  #   key: node-role.kubernetes.io/your_role
-  #   operator: Equal
-  #   value: "true"
+  image: vault:1.13.2
 
   # Specify the ServiceAccount where the Vault Pod and the Bank-Vaults configurer/unsealer is running
   serviceAccount: vault
@@ -58,24 +13,6 @@ spec:
   # Please note that some Ingress controllers like https://github.com/kubernetes/ingress-gce
   # forces you to expose your Service on a NodePort
   serviceType: ClusterIP
-
-  # Specify existing secret contains TLS certificate (accepted secret type: kubernetes.io/tls)
-  # If it is set, generating certificate will be disabled
-  # existingTlsSecretName: selfsigned-cert-tls
-
-  # Specify threshold for renewing certificates. Valid time units are "ns", "us", "ms", "s", "m", "h".
-  # tlsExpiryThreshold: 168h
-
-  # Request an Ingress controller with the default configuration
-  ingress:
-    # Specify Ingress object annotations here, if TLS is enabled (which is by default)
-    # the operator will add NGINX, Traefik and HAProxy Ingress compatible annotations
-    # to support TLS backends
-    annotations: {}
-    # Override the default Ingress specification here
-    # This follows the same format as the standard Kubernetes Ingress
-    # See: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.13/#ingressspec-v1beta1-extensions
-    spec: {}
 
   # Use local disk to store Vault file data, see config section.
   volumes:
@@ -90,12 +27,7 @@ spec:
   # Support for distributing the generated CA certificate Secret to other namespaces.
   # Define a list of namespaces or use ["*"] for all namespaces.
   caNamespaces:
-    - "webhook"
-
-  # Support for adding hostnames and IPs to the generated CA certificate.
-  # tlsAdditionalHosts:
-  #   - vault2.example.com
-  #   - 192.168.20.20
+    - "vault-secrets-webhook"
 
   # Describe where you would like to store the Vault unseal keys and root token.
   unsealConfig:
@@ -165,7 +97,7 @@ spec:
           # Allow every pod in the default namespace to use the secret kv store
           - name: default
             bound_service_account_names: ["default", "vault-secrets-webhook", "vault"]
-            bound_service_account_namespaces: ["default", "webhook"]
+            bound_service_account_namespaces: ["default", "vault-secrets-webhook"]
             policies: ["allow_secrets", "allow_pki"]
             ttl: 1h
 
@@ -225,29 +157,6 @@ spec:
     - name: VAULT_STORAGE_FILE
       value: "/vault/file"
 
-  # If you are using a custom certificate and are setting the hostname in a custom way
-  # sidecarEnvsConfig:
-  #   - name: VAULT_ADDR
-  #     value: https://vault.local:8200
-
-  # # https://kubernetes.io/docs/concepts/services-networking/add-entries-to-pod-etc-hosts-with-host-aliases/
-  # vaultPodSpec:
-  #   hostAliases:
-  #   - ip: "127.0.0.1"
-  #     hostnames:
-  #     - "vault.local"
-
-  # It is possible to override the Vault container directly:
-  # vaultContainerSpec:
-  #   lifecycle:
-  #     postStart:
-  #       exec:
-  #         command:
-  #              - setcap cap_ipc_lock=+ep /vault/plugins/orchestrate
-
-  # Marks presence of Istio, which influences things like port namings
-  istioEnabled: false
-
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -261,17 +170,3 @@ spec:
   resources:
     requests:
       storage: 1Gi
-
-# ---
-# apiVersion: v1
-# kind: PersistentVolume
-# metadata:
-#   name: vault-file
-# spec:
-#   capacity:
-#     storage: 1Gi
-#   accessModes:
-#   - ReadWriteOnce
-#   persistentVolumeReclaimPolicy: Recycle
-#   hostPath:
-#     path: /vault/file
