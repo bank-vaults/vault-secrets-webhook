@@ -1,11 +1,12 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: sample-configmap
+  name: test-configmap
   annotations:
     vault.security.banzaicloud.io/vault-addr: "https://vault.default.svc.cluster.local:8200"
     vault.security.banzaicloud.io/vault-role: "default"
-    vault.security.banzaicloud.io/vault-skip-verify: "true"
+    vault.security.banzaicloud.io/vault-tls-secret: vault-tls
+    # vault.security.banzaicloud.io/vault-skip-verify: "true"
     vault.security.banzaicloud.io/vault-path: "kubernetes"
 data:
   aws-access-key-id: vault:secret/data/accounts/aws#AWS_ACCESS_KEY_ID

@@ -1,4 +1,6 @@
 Dockerfile
+/.devenv/
+/.direnv/
 /.github/
 /bin/
 build/

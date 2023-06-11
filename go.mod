@@ -28,6 +28,7 @@ require (
 	k8s.io/client-go v0.27.2
 	logur.dev/adapter/logrus v0.5.0
 	sigs.k8s.io/controller-runtime v0.15.0
+	sigs.k8s.io/e2e-framework v0.2.0
 )
 
 require (
@@ -90,6 +91,7 @@ require (
 	github.com/docker/docker-credential-helpers v0.7.0 // indirect
 	github.com/emicklei/go-restful/v3 v3.10.2 // indirect
 	github.com/evanphx/json-patch v4.12.0+incompatible // indirect
+	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-errors/errors v1.0.2-0.20180813162953-d98b870cc4e0 // indirect
 	github.com/go-jose/go-jose/v3 v3.0.0 // indirect
@@ -159,6 +161,7 @@ require (
 	github.com/subosito/gotenv v1.4.2 // indirect
 	github.com/urfave/cli v1.22.12 // indirect
 	github.com/vbatts/tar-split v0.11.3 // indirect
+	github.com/vladimirvivien/gexe v0.2.0 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect

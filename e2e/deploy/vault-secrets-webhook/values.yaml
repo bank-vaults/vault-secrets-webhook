@@ -1,0 +1,12 @@
+replicaCount: 1
+
+image:
+  pullPolicy: Never
+
+configMapMutation: true
+configmapFailurePolicy: "Fail"
+podsFailurePolicy: "Fail"
+secretsFailurePolicy: "Fail"
+
+env:
+  VAULT_IMAGE: vault:1.13.2
