@@ -149,16 +149,21 @@ func uninstallVaultOperator(ctx context.Context, cfg *envconf.Config) (context.C
 func installVaultSecretsWebhook(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
 	manager := helm.New(cfg.KubeconfigFile())
 
-	webhookVersion := "latest"
+	version := "latest"
 	if v := os.Getenv("WEBHOOK_VERSION"); v != "" {
-		webhookVersion = v
+		version = v
+	}
+
+	chart := "../charts/vault-secrets-webhook/"
+	if v := os.Getenv("HELM_CHART"); v != "" {
+		chart = v
 	}
 
 	err := manager.RunInstall(
 		helm.WithName("vault-secrets-webhook"), // This is weird that ReleaseName works differently, but it is what it is
-		helm.WithChart("../charts/vault-secrets-webhook/"),
+		helm.WithChart(chart),
 		helm.WithNamespace("vault-secrets-webhook"),
-		helm.WithArgs("-f", "deploy/vault-secrets-webhook/values.yaml", "--set", "image.tag="+webhookVersion),
+		helm.WithArgs("-f", "deploy/vault-secrets-webhook/values.yaml", "--set", "image.tag="+version),
 		helm.WithWait(),
 		helm.WithTimeout("2m"),
 	)
