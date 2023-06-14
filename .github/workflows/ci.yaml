@@ -188,6 +188,11 @@ jobs:
         with:
           name: "[container-image] Docker tarball"
 
+      - name: Download helm chart
+        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
+        with:
+          name: "[helm-chart] package"
+
       - name: Test
         run: nix develop --impure .#ci -c make test-e2e
         env:
@@ -195,4 +200,5 @@ jobs:
           LOAD_IMAGE_ARCHIVE: ${{ github.workspace }}/docker.tar
           # VAULT_VERSION: ${{ matrix.vault_version }}
           WEBHOOK_VERSION: ${{ needs.artifacts.outputs.container-image-tag }}
+          HELM_CHART: "${{ github.workspace }}/${{ needs.artifacts.outputs.helm-chart-package }}"
           LOG_VERBOSE: "true"
