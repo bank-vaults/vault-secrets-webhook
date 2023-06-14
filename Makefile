@@ -72,7 +72,7 @@ test-e2e-local: container-image ## Run e2e tests locally
 	LOAD_IMAGE=${CONTAINER_IMAGE_REF} WEBHOOK_VERSION=dev ${MAKE} test-e2e
 
 .PHONY: lint
-lint: lint-go lint-helm lint-yaml
+lint: lint-go lint-helm lint-docker lint-yaml
 lint: ## Run linter
 
 .PHONY: lint-go
@@ -82,6 +82,10 @@ lint-go:
 .PHONY: lint-helm
 lint-helm:
 	helm lint deploy/charts/vault-secrets-webhook
+
+.PHONY: lint-docker
+lint-docker:
+	hadolint Dockerfile
 
 .PHONY: lint-yaml
 lint-yaml:
