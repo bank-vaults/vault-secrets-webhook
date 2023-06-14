@@ -1,10 +1,8 @@
-Dockerfile
 /.devenv/
 /.direnv/
 /.github/
 /bin/
-build/
-vendor/
-test/
-*.yaml
-*.yml
+/build/
+/deploy/
+/Dockerfile
+/e2e/
