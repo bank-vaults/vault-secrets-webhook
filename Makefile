@@ -7,7 +7,7 @@ CONTAINER_IMAGE_REF = ghcr.io/bank-vaults/vault-secrets-webhook:dev
 # Dependency versions
 GOLANGCI_VERSION = 1.53.1
 LICENSEI_VERSION = 0.8.0
-KIND_VERSION = 0.18.0
+KIND_VERSION = 0.19.0
 KURUN_VERSION = 0.7.0
 HELM_DOCS_VERSION = 1.11.0
 
