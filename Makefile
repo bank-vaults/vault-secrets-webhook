@@ -72,8 +72,24 @@ test-e2e-local: container-image ## Run e2e tests locally
 	LOAD_IMAGE=${CONTAINER_IMAGE_REF} WEBHOOK_VERSION=dev ${MAKE} test-e2e
 
 .PHONY: lint
+lint: lint-go lint-helm lint-docker lint-yaml
 lint: ## Run linter
-	golangci-lint run ${LINT_ARGS}
+
+.PHONY: lint-go
+lint-go:
+	golangci-lint run $(if ${CI},--out-format github-actions,)
+
+.PHONY: lint-helm
+lint-helm:
+	helm lint deploy/charts/vault-secrets-webhook
+
+.PHONY: lint-docker
+lint-docker:
+	hadolint Dockerfile
+
+.PHONY: lint-yaml
+lint-yaml:
+	yamllint $(if ${CI},-f github,) --no-warnings .
 
 .PHONY: fmt
 fmt: ## Format code
@@ -121,4 +137,4 @@ bin/helm-docs:
 .PHONY: help
 .DEFAULT_GOAL := help
 help:
-	@grep -h -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-10s\033[0m %s\n", $$1, $$2}'
+	@grep -h -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'

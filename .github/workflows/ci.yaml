@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
 
 permissions:
@@ -79,7 +79,7 @@ jobs:
         run: nix develop --impure .#ci
 
       - name: Lint
-        run: nix develop --impure .#ci -c make lint
+        run: nix develop --impure .#ci -c make lint -j
 
   license-check:
     name: License check
@@ -167,7 +167,7 @@ jobs:
     needs: [artifacts]
     strategy:
       matrix:
-        k8s_version: ["v1.24.13", "v1.25.9", "v1.26.4", "v1.27.1" ]
+        k8s_version: ["v1.24.13", "v1.25.9", "v1.26.4", "v1.27.1"]
         # vault_version: ["1.10.11", "1.11.10", "1.12.6", "1.13.2"]
 
     steps:
