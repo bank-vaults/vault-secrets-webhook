@@ -36,10 +36,10 @@ make test
 make test-e2e-local
 ```
 
-Run the linter:
+Run linters:
 
 ```shell
-make lint
+make lint # pass -j option to run them in parallel
 ```
 
 Some linter violations can automatically be fixed:
