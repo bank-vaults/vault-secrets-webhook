@@ -154,7 +154,7 @@ func installVaultSecretsWebhook(ctx context.Context, cfg *envconf.Config) (conte
 		version = v
 	}
 
-	chart := "../charts/vault-secrets-webhook/"
+	chart := "../deploy/charts/vault-secrets-webhook/"
 	if v := os.Getenv("HELM_CHART"); v != "" {
 		chart = v
 	}
