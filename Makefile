@@ -40,21 +40,21 @@ run: ## Run the operator locally talking to a Kubernetes cluster
 forward: ## Install the webhook chart and kurun to port-forward the local webhook into Kubernetes
 	kubectl create namespace vault-infra --dry-run -o yaml | kubectl apply -f -
 	kubectl label namespaces vault-infra name=vault-infra --overwrite
-	helm upgrade --install vault-secrets-webhook charts/vault-secrets-webhook --namespace vault-infra --set replicaCount=0 --set podsFailurePolicy=Fail --set secretsFailurePolicy=Fail --set configMapMutation=true --set configMapFailurePolicy=Fail
+	helm upgrade --install vault-secrets-webhook deploy/charts/vault-secrets-webhook --namespace vault-infra --set replicaCount=0 --set podsFailurePolicy=Fail --set secretsFailurePolicy=Fail --set configMapMutation=true --set configMapFailurePolicy=Fail
 	kurun port-forward localhost:8443 --namespace vault-infra --servicename vault-secrets-webhook --tlssecret vault-secrets-webhook-webhook-tls
 
-.PHONY: clean
-clean: ## Clean operator resources from a Kubernetes cluster
-	kubectl delete -f deploy/crd.yaml
-	kubectl delete -f deploy/rbac.yaml
-
 .PHONY: artifacts
-artifacts: container-image
+artifacts: container-image helm-chart
 artifacts: ## Build artifacts
 
 .PHONY: container-image
 container-image: ## Build container image
 	docker build -t ${CONTAINER_IMAGE_REF} .
+
+.PHONY: helm-chart
+helm-chart: ## Build Helm chart
+	@mkdir -p build
+	helm package -d build/ deploy/charts/vault-secrets-webhook
 
 .PHONY: check
 check: test lint ## Run checks (tests and linters)
