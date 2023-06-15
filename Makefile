@@ -73,7 +73,7 @@ test-e2e-local: container-image ## Run e2e tests locally
 
 .PHONY: lint
 lint: lint-go lint-helm lint-docker lint-yaml
-lint: ## Run linter
+lint: ## Run linters
 
 .PHONY: lint-go
 lint-go:
