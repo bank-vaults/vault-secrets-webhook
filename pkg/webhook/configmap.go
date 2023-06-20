@@ -68,7 +68,7 @@ func (mw *MutatingWebhook) MutateConfigMap(configMap *corev1.ConfigMap, vaultCon
 			binaryData := map[string]string{
 				key: string(value),
 			}
-			err := mw.mutateConfigMapBinaryData(configMap, binaryData, secretInjector)
+			err := mw.mutateConfigMapBinaryData(configMap, binaryData, &secretInjector)
 			if err != nil {
 				return err
 			}
@@ -78,7 +78,7 @@ func (mw *MutatingWebhook) MutateConfigMap(configMap *corev1.ConfigMap, vaultCon
 	return nil
 }
 
-func (mw *MutatingWebhook) mutateConfigMapBinaryData(configMap *corev1.ConfigMap, data map[string]string, secretInjector injector.SecretInjector) error {
+func (mw *MutatingWebhook) mutateConfigMapBinaryData(configMap *corev1.ConfigMap, data map[string]string, secretInjector *injector.SecretInjector) error {
 	mapData, err := secretInjector.GetDataFromVault(data)
 	if err != nil {
 		return err
