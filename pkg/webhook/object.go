@@ -74,7 +74,7 @@ func sliceIterator(s []interface{}) iterator {
 	return c
 }
 
-func traverseObject(o interface{}, secretInjector injector.SecretInjector) error {
+func traverseObject(o interface{}, secretInjector *injector.SecretInjector) error {
 	var iterator iterator
 
 	switch value := o.(type) {
@@ -135,5 +135,5 @@ func (mw *MutatingWebhook) MutateObject(object *unstructured.Unstructured, vault
 	}
 	secretInjector := injector.NewSecretInjector(config, vaultClient, nil, logger)
 
-	return traverseObject(object.Object, secretInjector)
+	return traverseObject(object.Object, &secretInjector)
 }
