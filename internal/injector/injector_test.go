@@ -101,7 +101,7 @@ func TestSecretInjector(t *testing.T) {
 			results[key] = value
 		}
 
-		err = injector.InjectSecretsFromVault(references, injectFunc)
+		err := injector.InjectSecretsFromVault(references, injectFunc)
 		require.NoError(t, err)
 
 		// This tests caching of dynamic secrets in calls. We can't predict
@@ -125,8 +125,7 @@ func TestSecretInjector(t *testing.T) {
 	})
 
 	t.Run("correct path but missing secret", func(t *testing.T) {
-		// TODO: fix race condition
-		// t.Parallel()
+		t.Parallel()
 
 		references := map[string]string{
 			"SECRET": "vault:secret/data/supersecret#password",
@@ -138,13 +137,12 @@ func TestSecretInjector(t *testing.T) {
 			results[key] = value
 		}
 
-		err = injector.InjectSecretsFromVault(references, injectFunc)
+		err := injector.InjectSecretsFromVault(references, injectFunc)
 		assert.EqualError(t, err, "path not found: secret/data/supersecret")
 	})
 
 	t.Run("incorrect kv2 path", func(t *testing.T) {
-		// TODO: fix race condition
-		// t.Parallel()
+		t.Parallel()
 
 		references := map[string]string{
 			"SECRET": "vault:secret/get/data#data",
@@ -156,7 +154,7 @@ func TestSecretInjector(t *testing.T) {
 			results[key] = value
 		}
 
-		err = injector.InjectSecretsFromVault(references, injectFunc)
+		err := injector.InjectSecretsFromVault(references, injectFunc)
 		assert.EqualError(t, err, "path not found: secret/get/data")
 	})
 }
@@ -194,8 +192,7 @@ func TestSecretInjectorFromPath(t *testing.T) {
 	injector := NewSecretInjector(Config{}, client, nil, logrus.New())
 
 	t.Run("success", func(t *testing.T) {
-		// TODO: fix race condition
-		// t.Parallel()
+		t.Parallel()
 
 		paths := "secret/data/account1"
 
@@ -206,7 +203,7 @@ func TestSecretInjectorFromPath(t *testing.T) {
 			results[key] = value
 		}
 
-		err = injector.InjectSecretsFromVaultPath(paths, injectFunc)
+		err := injector.InjectSecretsFromVaultPath(paths, injectFunc)
 		require.NoError(t, err)
 
 		assert.Equal(t, map[string]string{
@@ -216,8 +213,7 @@ func TestSecretInjectorFromPath(t *testing.T) {
 	})
 
 	t.Run("success multiple paths", func(t *testing.T) {
-		// TODO: fix race condition
-		// t.Parallel()
+		t.Parallel()
 
 		paths := "secret/data/account1,secret/data/account2"
 		results := map[string]string{}
@@ -227,7 +223,7 @@ func TestSecretInjectorFromPath(t *testing.T) {
 			results[key] = value
 		}
 
-		err = injector.InjectSecretsFromVaultPath(paths, injectFunc)
+		err := injector.InjectSecretsFromVaultPath(paths, injectFunc)
 		require.NoError(t, err)
 
 		assert.Equal(t, map[string]string{
@@ -239,8 +235,7 @@ func TestSecretInjectorFromPath(t *testing.T) {
 	})
 
 	t.Run("incorrect kv2 path", func(t *testing.T) {
-		// TODO: fix race condition
-		// t.Parallel()
+		t.Parallel()
 
 		paths := "secret/data/doesnotexist"
 
@@ -250,7 +245,7 @@ func TestSecretInjectorFromPath(t *testing.T) {
 			results[key] = value
 		}
 
-		err = injector.InjectSecretsFromVaultPath(paths, injectFunc)
+		err := injector.InjectSecretsFromVaultPath(paths, injectFunc)
 		assert.EqualError(t, err, "path not found: secret/data/doesnotexist")
 
 		assert.Equal(t, map[string]string{}, results)

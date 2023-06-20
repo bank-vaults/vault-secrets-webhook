@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"regexp"
 	"strings"
+	"sync"
 
 	"emperror.dev/errors"
 	"github.com/bank-vaults/vault-sdk/vault"
@@ -47,6 +48,7 @@ type Config struct {
 }
 
 type SecretInjector struct {
+	mu           sync.RWMutex
 	config       Config
 	client       *vault.Client
 	renewer      SecretRenewer
@@ -68,7 +70,7 @@ func NewSecretInjector(config Config, client *vault.Client, renewer SecretRenewe
 
 var inlineMutationRegex = regexp.MustCompile(`\${([>]{0,2}vault:.*?#*}?)}`)
 
-func (i SecretInjector) FetchTransitSecrets(secrets []string) (map[string][]byte, error) {
+func (i *SecretInjector) FetchTransitSecrets(secrets []string) (map[string][]byte, error) {
 	if len(i.config.TransitKeyID) == 0 {
 		return map[string][]byte{}, errors.Errorf("found encrypted variable, but transit key ID is empty: %s", "todo")
 	}
@@ -78,13 +80,15 @@ func (i SecretInjector) FetchTransitSecrets(secrets []string) (map[string][]byte
 	}
 
 	out, err := i.client.Transit.DecryptBatch(i.config.TransitPath, i.config.TransitKeyID, secrets)
-	for k, v := range out {
-		i.transitCache[k] = v
-	}
-
 	if err != nil {
 		i.logger.Errorln("failed to decrypt variable:", err)
 	}
+
+	i.mu.Lock()
+	for k, v := range out {
+		i.transitCache[k] = v
+	}
+	i.mu.Unlock()
 
 	return out, nil
 }
@@ -105,7 +109,7 @@ func paginate(secrets []string, batchSize int) [][]string {
 	return transitSecrets
 }
 
-func (i SecretInjector) preprocessTransitSecrets(references *map[string]string, inject SecretInjectorFunc) error {
+func (i *SecretInjector) preprocessTransitSecrets(references *map[string]string, inject SecretInjectorFunc) error {
 	// use set so that we don't have duplicates
 	secretSet := map[string]bool{}
 
@@ -124,11 +128,13 @@ func (i SecretInjector) preprocessTransitSecrets(references *map[string]string, 
 
 	// convert back to slice & filter out already-cached secrets
 	secrets := make([]string, 0, len(secretSet))
+	i.mu.RLock()
 	for k := range secretSet {
 		if _, cached := i.transitCache[k]; !cached {
 			secrets = append(secrets, k)
 		}
 	}
+	i.mu.RUnlock()
 
 	for _, sec := range paginate(secrets, i.config.TransitBatchSize) {
 		_, err := i.FetchTransitSecrets(sec)
@@ -144,11 +150,13 @@ func (i SecretInjector) preprocessTransitSecrets(references *map[string]string, 
 	for name, value := range *references {
 		if HasInlineVaultDelimiters(value) {
 			newValue := value
+			i.mu.RLock()
 			for _, vaultSecretReference := range FindInlineVaultDelimiters(value) {
 				if v, ok := i.transitCache[vaultSecretReference[0]]; ok {
 					newValue = strings.Replace(value, vaultSecretReference[0], string(v), -1)
 				}
 			}
+			i.mu.RUnlock()
 
 			// Only inject the value if its content has been updated using the transit cache
 			if value != newValue {
@@ -161,7 +169,10 @@ func (i SecretInjector) preprocessTransitSecrets(references *map[string]string, 
 			continue
 		}
 		if i.client.Transit.IsEncrypted(value) {
-			if v, ok := i.transitCache[value]; ok {
+			i.mu.RLock()
+			v, ok := i.transitCache[value]
+			i.mu.RUnlock()
+			if ok {
 				inject(name, string(v))
 
 				continue
@@ -172,7 +183,7 @@ func (i SecretInjector) preprocessTransitSecrets(references *map[string]string, 
 	return nil
 }
 
-func (i SecretInjector) InjectSecretsFromVault(references map[string]string, inject SecretInjectorFunc) error {
+func (i *SecretInjector) InjectSecretsFromVault(references map[string]string, inject SecretInjectorFunc) error {
 	err := i.preprocessTransitSecrets(&references, inject)
 	if err != nil && !i.config.IgnoreMissingSecrets {
 		return errors.Wrapf(err, "unable to preprocess transit secrets")
@@ -225,7 +236,10 @@ func (i SecretInjector) InjectSecretsFromVault(references map[string]string, inj
 				return errors.Errorf("found encrypted variable, but transit key ID is empty: %s", name)
 			}
 
-			if v, ok := i.transitCache[value]; ok {
+			i.mu.RLock()
+			v, ok := i.transitCache[value]
+			i.mu.RUnlock()
+			if ok {
 				inject(name, string(v))
 
 				continue
@@ -241,7 +255,10 @@ func (i SecretInjector) InjectSecretsFromVault(references map[string]string, inj
 				continue
 			}
 
+			i.mu.Lock()
 			i.transitCache[value] = out
+			i.mu.Unlock()
+
 			inject(name, string(out))
 
 			continue
@@ -268,9 +285,11 @@ func (i SecretInjector) InjectSecretsFromVault(references map[string]string, inj
 		var data map[string]interface{}
 		var err error
 
+		i.mu.RLock()
 		if data = i.secretCache[secretCacheKey]; data == nil {
 			data, err = i.readVaultPath(valuePath, versionOrData, update)
 		}
+		i.mu.RUnlock()
 
 		if err != nil {
 			return err
@@ -290,7 +309,9 @@ func (i SecretInjector) InjectSecretsFromVault(references map[string]string, inj
 			continue
 		}
 
+		i.mu.Lock()
 		i.secretCache[secretCacheKey] = data
+		i.mu.Unlock()
 
 		templater := configuration.NewTemplater(configuration.DefaultLeftDelimiter, configuration.DefaultRightDelimiter)
 
@@ -316,7 +337,7 @@ func (i SecretInjector) InjectSecretsFromVault(references map[string]string, inj
 	return nil
 }
 
-func (i SecretInjector) InjectSecretsFromVaultPath(paths string, inject SecretInjectorFunc) error {
+func (i *SecretInjector) InjectSecretsFromVaultPath(paths string, inject SecretInjectorFunc) error {
 	vaultPaths := strings.Split(paths, ",")
 
 	for _, path := range vaultPaths {
@@ -360,7 +381,7 @@ func (i SecretInjector) InjectSecretsFromVaultPath(paths string, inject SecretIn
 	return nil
 }
 
-func (i SecretInjector) readVaultPath(path, versionOrData string, update bool) (map[string]interface{}, error) {
+func (i *SecretInjector) readVaultPath(path, versionOrData string, update bool) (map[string]interface{}, error) {
 	var secretData map[string]interface{}
 
 	var secret *vaultapi.Secret
@@ -432,7 +453,7 @@ func FindInlineVaultDelimiters(value string) [][]string {
 	return inlineMutationRegex.FindAllStringSubmatch(value, -1)
 }
 
-func (i SecretInjector) GetDataFromVault(data map[string]string) (map[string]string, error) {
+func (i *SecretInjector) GetDataFromVault(data map[string]string) (map[string]string, error) {
 	vaultData := make(map[string]string, len(data))
 
 	inject := func(key, value string) {
