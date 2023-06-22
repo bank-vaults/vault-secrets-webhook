@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   vault:
-    image: vault:1.13.2
+    image: vault:1.13.3
     ports:
       - 127.0.0.1:8200:8200
     environment:
