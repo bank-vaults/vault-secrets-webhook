@@ -3,7 +3,7 @@ module github.com/bank-vaults/vault-secrets-webhook
 go 1.20
 
 require (
-	cloud.google.com/go/kms v1.12.1
+	cloud.google.com/go/kms v1.13.0
 	emperror.dev/errors v0.8.1
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/aws/aws-sdk-go v1.44.298
