@@ -52,7 +52,7 @@ vaultEnv:
   tag: "v1.21.0"
 
 env:
-  VAULT_IMAGE: vault:1.13.3
+  VAULT_IMAGE: hashicorp/vault:1.13.3
   # VAULT_CAPATH: /vault/tls
   # # Used when the pod that should get secret injected does not
   # # specify an imagePullSecret
