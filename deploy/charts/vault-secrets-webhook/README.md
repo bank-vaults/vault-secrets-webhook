@@ -117,7 +117,7 @@ The following tables lists configurable parameters of the vault-secrets-webhook 
 | topologySpreadConstraints          | topologySpreadConstraints to add                                              | `{}`                                                     |
 | rbac.psp.enabled                   | use pod security policy                                                       | `false`                                                  |
 | rbac.authDelegatorRole.enabled     | bind `system:auth-delegator` to the ServiceAccount                            | `false`                                                  |
-| env.VAULT_IMAGE                    | vault image                                                                   | `vault:1.6.2`                                            |
+| env.VAULT_IMAGE                    | vault image                                                                   | `hashicorp/vault:1.13.3`                                 |
 | env.VAULT_ENV_CPU_REQUEST          | cpu requests for init-containers vault-env and copy-vault-env                 | `50m`                                                    |
 | env.VAULT_ENV_MEMORY_REQUEST       | memory requests for init-containers vault-env and copy-vault-env              | `64Mi`                                                   |
 | env.VAULT_ENV_CPU_LIMIT            | cpu limits for init-containers vault-env and copy-vault-env                   | `250m`                                                   |
