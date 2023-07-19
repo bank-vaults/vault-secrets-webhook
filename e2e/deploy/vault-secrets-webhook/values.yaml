@@ -9,4 +9,4 @@ podsFailurePolicy: "Fail"
 secretsFailurePolicy: "Fail"
 
 env:
-  VAULT_IMAGE: hashicorp/vault:1.13.3
+  VAULT_IMAGE: hashicorp/vault:1.14.0
