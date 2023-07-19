@@ -602,7 +602,7 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 					SkipVerify:                    false,
 					CtCPU:                         resource.MustParse("50m"),
 					CtMemory:                      resource.MustParse("128Mi"),
-					AgentImage:                    "vault:latest",
+					AgentImage:                    "hashicorp/vault:latest",
 					AgentImagePullPolicy:          "IfNotPresent",
 					EnvCPURequest:                 resource.MustParse("50m"),
 					EnvMemoryRequest:              resource.MustParse("64Mi"),
@@ -616,7 +616,7 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 					InitContainers: []corev1.Container{
 						{
 							Name:            "vault-agent",
-							Image:           "vault:latest",
+							Image:           "hashicorp/vault:latest",
 							Command:         []string{"vault", "agent", "-config=/vault/agent/config.hcl", "-exit-after-auth"},
 							ImagePullPolicy: "IfNotPresent",
 							Env: []corev1.EnvVar{
@@ -796,7 +796,7 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 					SkipVerify:                    false,
 					CtCPU:                         resource.MustParse("50m"),
 					CtMemory:                      resource.MustParse("128Mi"),
-					AgentImage:                    "vault:latest",
+					AgentImage:                    "hashicorp/vault:latest",
 					AgentImagePullPolicy:          "IfNotPresent",
 					EnvCPURequest:                 resource.MustParse("50m"),
 					EnvMemoryRequest:              resource.MustParse("64Mi"),
@@ -810,7 +810,7 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 					InitContainers: []corev1.Container{
 						{
 							Name:            "vault-agent",
-							Image:           "vault:latest",
+							Image:           "hashicorp/vault:latest",
 							Command:         []string{"vault", "agent", "-config=/vault/agent/config.hcl", "-exit-after-auth"},
 							ImagePullPolicy: "IfNotPresent",
 							Env: []corev1.EnvVar{
@@ -989,7 +989,7 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 					SkipVerify:                    false,
 					AgentCPU:                      resource.MustParse("50m"),
 					AgentMemory:                   resource.MustParse("128Mi"),
-					AgentImage:                    "vault:latest",
+					AgentImage:                    "hashicorp/vault:latest",
 					AgentImagePullPolicy:          "IfNotPresent",
 					ServiceAccountTokenVolumeName: "/var/run/secrets/kubernetes.io/serviceaccount",
 					AgentEnvVariables:             "[{\"Name\": \"SKIP_SETCAP\",\"Value\": \"1\"}]",
@@ -1001,7 +1001,7 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 					Containers: []corev1.Container{
 						{
 							Name:            "vault-agent",
-							Image:           "vault:latest",
+							Image:           "hashicorp/vault:latest",
 							ImagePullPolicy: "IfNotPresent",
 							Args:            []string{"agent", "-config", "/vault/config/config.hcl"},
 							Resources: corev1.ResourceRequirements{
@@ -1148,7 +1148,7 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 					SkipVerify:                    false,
 					CtCPU:                         resource.MustParse("50m"),
 					CtMemory:                      resource.MustParse("128Mi"),
-					AgentImage:                    "vault:latest",
+					AgentImage:                    "hashicorp/vault:latest",
 					AgentImagePullPolicy:          "IfNotPresent",
 					EnvCPURequest:                 resource.MustParse("50m"),
 					EnvMemoryRequest:              resource.MustParse("64Mi"),
@@ -1162,7 +1162,7 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 					InitContainers: []corev1.Container{
 						{
 							Name:            "vault-agent",
-							Image:           "vault:latest",
+							Image:           "hashicorp/vault:latest",
 							Command:         []string{"vault", "agent", "-config=/vault/agent/config.hcl", "-exit-after-auth"},
 							ImagePullPolicy: "IfNotPresent",
 							Env: []corev1.EnvVar{
@@ -1367,7 +1367,7 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 					SkipVerify:                    false,
 					CtCPU:                         resource.MustParse("50m"),
 					CtMemory:                      resource.MustParse("128Mi"),
-					AgentImage:                    "vault:latest",
+					AgentImage:                    "hashicorp/vault:latest",
 					AgentImagePullPolicy:          "IfNotPresent",
 					EnvCPURequest:                 resource.MustParse("50m"),
 					EnvMemoryRequest:              resource.MustParse("64Mi"),
@@ -1381,7 +1381,7 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 					InitContainers: []corev1.Container{
 						{
 							Name:            "vault-agent",
-							Image:           "vault:latest",
+							Image:           "hashicorp/vault:latest",
 							Command:         []string{"vault", "agent", "-config=/vault/agent/config.hcl", "-exit-after-auth"},
 							ImagePullPolicy: "IfNotPresent",
 							Env: []corev1.EnvVar{
