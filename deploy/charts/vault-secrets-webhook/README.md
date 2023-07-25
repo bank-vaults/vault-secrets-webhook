@@ -98,7 +98,7 @@ The following tables lists configurable parameters of the vault-secrets-webhook 
 | affinity                           | affinities to use                                                             | `{}`                                                     |
 | debug                              | debug logs for webhook                                                        | `false`                                                  |
 | image.pullPolicy                   | image pull policy                                                             | `IfNotPresent`                                           |
-| image.repository                   | image repo that contains the admission server                                 | `ghcr.io/banzaicloud/vault-secrets-webhook`              |
+| image.repository                   | image repo that contains the admission server                                 | `ghcr.io/bank-vaults/vault-secrets-webhook`              |
 | image.tag                          | image tag                                                                     | `.Chart.AppVersion`                                      |
 | image.imagePullSecrets             | image pull secrets for private repositories                                   | `[]`                                                     |
 | vaultEnv.repository                | image repo that contains the vault-env container                              | `ghcr.io/bank-vaults/vault-env`                          |
