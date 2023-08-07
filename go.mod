@@ -26,7 +26,7 @@ require (
 	k8s.io/client-go v0.27.4
 	k8s.io/klog/v2 v2.100.1
 	logur.dev/adapter/logrus v0.5.0
-	sigs.k8s.io/controller-runtime v0.15.0
+	sigs.k8s.io/controller-runtime v0.15.1
 	sigs.k8s.io/e2e-framework v0.2.0
 )
 
