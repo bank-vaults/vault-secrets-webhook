@@ -1,0 +1,50 @@
+kind: Deploy
+type: helm
+name: vault-operator
+spec:
+  namespace: vault-operator
+  chart:
+    name: oci://ghcr.io/bank-vaults/helm-charts/vault-operator
+    version: "1.20.0"
+
+---
+kind: Deploy
+type: kubernetes
+name: vault
+dependencies:
+  - deploy.vault-operator
+spec:
+  namespace: default
+  files:
+    - ./e2e/deploy/vault/rbac.yaml
+    - ./e2e/deploy/vault/vault.yaml
+
+---
+kind: Build
+type: container
+name: vault-secrets-webhook
+exclude:
+  - .direnv/**/*
+  - .devenv/**/*
+  - build/**/*
+  - e2e/**/*
+
+---
+kind: Deploy
+type: helm
+name: vault-secrets-webhook
+dependencies:
+  - deploy.vault
+variables:
+  repository: ${actions.build.vault-secrets-webhook.outputs.deployment-image-name}
+  tag: ${actions.build.vault-secrets-webhook.version}
+spec:
+  namespace: vault-secrets-webhook
+  chart:
+    path: ./deploy/charts/vault-secrets-webhook/
+  valueFiles:
+    - ./e2e/deploy/vault-secrets-webhook/values.yaml
+  values:
+    image:
+      repository: ${var.repository}
+      tag: ${var.tag}

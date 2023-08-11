@@ -1,0 +1,23 @@
+# Documentation about Garden projects can be found at https://docs.garden.io/using-garden/projects
+# Reference for Garden projects can be found at https://docs.garden.io/reference/project-config
+apiVersion: garden.io/v1
+kind: Project
+name: vault-secrets-webhook
+dotIgnoreFile: .gitignore
+defaultEnvironment: local
+
+environments:
+  - name: local
+    defaultNamespace: default
+
+providers:
+  - name: local-kubernetes
+    environments: [local]
+    setupIngressController: null
+
+scan:
+  exclude:
+    - .direnv/**/*
+    - .devenv/**/*
+    - build/**/*
+    - e2e/**/*
