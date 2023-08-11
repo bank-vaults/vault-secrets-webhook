@@ -22,6 +22,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -58,8 +59,11 @@ func TestMain(m *testing.M) {
 	}
 	log.SetLogger(klog.NewKlogr())
 
+	bootstrap := strings.ToLower(os.Getenv("BOOTSTRAP")) != "false"
+	useRealCluster := !bootstrap || strings.ToLower(os.Getenv("USE_REAL_CLUSTER")) == "true"
+
 	// Set up cluster
-	if os.Getenv("USE_REAL_CLUSTER") == "true" {
+	if useRealCluster {
 		path := conf.ResolveKubeConfigFile()
 		cfg := envconf.NewWithKubeConfig(path)
 
@@ -90,23 +94,28 @@ func TestMain(m *testing.M) {
 		}
 	}
 
-	// Install vault-operator
-	testenv.Setup(installVaultOperator)
-	testenv.Finish(uninstallVaultOperator, envfuncs.DeleteNamespace("vault-operator"))
+	if bootstrap {
+		// Install vault-operator
+		testenv.Setup(installVaultOperator)
+		testenv.Finish(uninstallVaultOperator, envfuncs.DeleteNamespace("vault-operator"))
 
-	testenv.Setup(envfuncs.CreateNamespace("vault-secrets-webhook"), installVaultSecretsWebhook)
-	testenv.Finish(uninstallVaultSecretsWebhook, envfuncs.DeleteNamespace("vault-secrets-webhook"))
+		testenv.Setup(envfuncs.CreateNamespace("vault-secrets-webhook"), installVaultSecretsWebhook)
+		testenv.Finish(uninstallVaultSecretsWebhook, envfuncs.DeleteNamespace("vault-secrets-webhook"))
 
-	// Set up test namespace
-	// ns := envconf.RandomName("webhook-test", 16)
-	// testenv.Setup(envfuncs.CreateNamespace(ns))
-	// testenv.Finish(envfuncs.DeleteNamespace(ns))
+		// Set up test namespace
+		// ns := envconf.RandomName("webhook-test", 16)
+		// testenv.Setup(envfuncs.CreateNamespace(ns))
+		// testenv.Finish(envfuncs.DeleteNamespace(ns))
 
-	// Unsealing and Vault access only works in the default namespace at the moment
-	testenv.Setup(useNamespace("default"))
+		// Unsealing and Vault access only works in the default namespace at the moment
+		testenv.Setup(useNamespace("default"))
 
-	testenv.Setup(installVault, waitForVaultTLS)
-	testenv.Finish(uninstallVault)
+		testenv.Setup(installVault, waitForVaultTLS)
+		testenv.Finish(uninstallVault)
+	} else {
+		// Unsealing and Vault access only works in the default namespace at the moment
+		testenv.Setup(useNamespace("default"))
+	}
 
 	os.Exit(testenv.Run(m))
 }
