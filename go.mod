@@ -21,9 +21,9 @@ require (
 	github.com/spf13/viper v1.16.0
 	github.com/stretchr/testify v1.8.4
 	gocloud.dev v0.33.0
-	k8s.io/api v0.28.0
+	k8s.io/api v0.28.1
 	k8s.io/apimachinery v0.28.1
-	k8s.io/client-go v0.28.0
+	k8s.io/client-go v0.28.1
 	k8s.io/klog/v2 v2.100.1
 	logur.dev/adapter/logrus v0.5.0
 	sigs.k8s.io/controller-runtime v0.15.1
