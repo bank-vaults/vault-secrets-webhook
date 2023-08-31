@@ -845,8 +845,6 @@ func getAgentContainers(originalContainers []corev1.Container, podSecurityContex
 func getBaseSecurityContext(podSecurityContext *corev1.PodSecurityContext, vaultConfig VaultConfig) *corev1.SecurityContext {
 	context := &corev1.SecurityContext{
 		AllowPrivilegeEscalation: &vaultConfig.PspAllowPrivilegeEscalation,
-		RunAsNonRoot:             &vaultConfig.RunAsNonRoot,
-		RunAsUser:                &vaultConfig.RunAsUser,
 		ReadOnlyRootFilesystem:   &vaultConfig.ReadOnlyRootFilesystem,
 		Capabilities: &corev1.Capabilities{
 			Add: []corev1.Capability{
@@ -864,6 +862,12 @@ func getBaseSecurityContext(podSecurityContext *corev1.PodSecurityContext, vault
 
 	if podSecurityContext != nil && podSecurityContext.RunAsUser != nil {
 		context.RunAsUser = podSecurityContext.RunAsUser
+	}
+
+	// Although it could explicitly be set to false,
+	// the behavior of false and unset are the same
+	if vaultConfig.RunAsNonRoot {
+		context.RunAsNonRoot = &vaultConfig.RunAsNonRoot
 	}
 
 	if vaultConfig.RunAsUser > 0 {
