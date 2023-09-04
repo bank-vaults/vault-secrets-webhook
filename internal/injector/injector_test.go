@@ -63,7 +63,10 @@ func TestSecretInjector(t *testing.T) {
 
 	ciphertext := secret.Data["ciphertext"].(string) //nolint:forcetypeassert
 
-	_, err = client.RawClient().Logical().Write("secret/data/account", vault.NewData(0, map[string]interface{}{"username": "superusername", "password": "secret"}))
+	_, err = client.RawClient().Logical().Write("secret/data/account", vault.NewData(0, map[string]interface{}{"username": "superusername1", "password": "secret1"}))
+	assert.NoError(t, err)
+
+	_, err = client.RawClient().Logical().Write("secret/data/account", vault.NewData(1, map[string]interface{}{"username": "superusername", "password": "secret"}))
 	assert.NoError(t, err)
 
 	err = client.RawClient().Sys().Mount("pki", &vaultapi.MountInput{Type: "pki"})
@@ -86,6 +89,7 @@ func TestSecretInjector(t *testing.T) {
 		t.Parallel()
 
 		references := map[string]string{
+			"ACCOUNT_PASSWORD_1":              "vault:secret/data/account#password#1",
 			"ACCOUNT_PASSWORD":                "vault:secret/data/account#password",
 			"TRANSIT_SECRET":                  `>>vault:transit/decrypt/mykey#${.plaintext | b64dec}#{"ciphertext":"` + ciphertext + `"}`,
 			"ROOT_CERT":                       ">>vault:pki/root/generate/internal#certificate",
@@ -117,6 +121,7 @@ func TestSecretInjector(t *testing.T) {
 		delete(results, "INLINE_DYNAMIC_SECRET")
 
 		assert.Equal(t, map[string]string{
+			"ACCOUNT_PASSWORD_1":              "secret1",
 			"ACCOUNT_PASSWORD":                "secret",
 			"TRANSIT_SECRET":                  "secret",
 			"INLINE_SECRET":                   "scheme://superusername:secret@127.0.0.1:8080",
@@ -176,7 +181,10 @@ func TestSecretInjectorFromPath(t *testing.T) {
 	client, err := vault.NewClientFromConfig(config)
 	assert.NoError(t, err)
 
-	_, err = client.RawClient().Logical().Write("secret/data/account1", vault.NewData(0, map[string]interface{}{"password": "secret", "password2": "secret2"}))
+	_, err = client.RawClient().Logical().Write("secret/data/account1", vault.NewData(0, map[string]interface{}{"password": "secret", "password2": "secret1"}))
+	assert.NoError(t, err)
+
+	_, err = client.RawClient().Logical().Write("secret/data/account1", vault.NewData(1, map[string]interface{}{"password": "secret", "password2": "secret2"}))
 	assert.NoError(t, err)
 
 	_, err = client.RawClient().Logical().Write("secret/data/account2", vault.NewData(0, map[string]interface{}{"password3": "secret", "password4": "secret2"}))
@@ -212,6 +220,27 @@ func TestSecretInjectorFromPath(t *testing.T) {
 		}, results)
 	})
 
+	t.Run("success specific version", func(t *testing.T) {
+		t.Parallel()
+
+		paths := "secret/data/account1#1"
+
+		results := map[string]string{}
+
+		injectFunc := func(key, value string) {
+			assertKeyDoesNotExist(t, results, key)
+			results[key] = value
+		}
+
+		err := injector.InjectSecretsFromVaultPath(paths, injectFunc)
+		require.NoError(t, err)
+
+		assert.Equal(t, map[string]string{
+			"password":  "secret",
+			"password2": "secret1",
+		}, results)
+	})
+
 	t.Run("success multiple paths", func(t *testing.T) {
 		t.Parallel()
 
@@ -229,6 +258,28 @@ func TestSecretInjectorFromPath(t *testing.T) {
 		assert.Equal(t, map[string]string{
 			"password":  "secret",
 			"password2": "secret2",
+			"password3": "secret",
+			"password4": "secret2",
+		}, results)
+	})
+
+	t.Run("success multiple paths, specific version", func(t *testing.T) {
+		t.Parallel()
+
+		paths := "secret/data/account1#1,secret/data/account2"
+		results := map[string]string{}
+
+		injectFunc := func(key, value string) {
+			assertKeyDoesNotExist(t, results, key)
+			results[key] = value
+		}
+
+		err := injector.InjectSecretsFromVaultPath(paths, injectFunc)
+		require.NoError(t, err)
+
+		assert.Equal(t, map[string]string{
+			"password":  "secret",
+			"password2": "secret1",
 			"password3": "secret",
 			"password4": "secret2",
 		}, results)
