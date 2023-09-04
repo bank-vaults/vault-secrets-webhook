@@ -346,8 +346,8 @@ func (i *SecretInjector) InjectSecretsFromVaultPath(paths string, inject SecretI
 
 		version := "-1"
 
-		if len(split) > 2 {
-			version = split[2]
+		if len(split) == 2 {
+			version = split[1]
 		}
 
 		data, err := i.readVaultPath(valuePath, version, false)
