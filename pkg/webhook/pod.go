@@ -683,6 +683,13 @@ func getInitContainers(originalContainers []corev1.Container, podSecurityContext
 		})
 
 		securityContext := getBaseSecurityContext(podSecurityContext, vaultConfig)
+		securityContext.Capabilities.Add = []corev1.Capability{
+			"CHOWN",
+			"SETFCAP",
+			"SETGID",
+			"SETPCAP",
+			"SETUID",
+		}
 
 		containers = append(containers, corev1.Container{
 			Name:            "vault-agent",
@@ -787,8 +794,14 @@ func getAgentContainers(originalContainers []corev1.Container, podSecurityContex
 	containers := []corev1.Container{}
 
 	securityContext := getBaseSecurityContext(podSecurityContext, vaultConfig)
-
-	securityContext.Capabilities.Add = append(securityContext.Capabilities.Add, "IPC_LOCK")
+	securityContext.Capabilities.Add = []corev1.Capability{
+		"CHOWN",
+		"SETFCAP",
+		"SETGID",
+		"SETPCAP",
+		"SETUID",
+		"IPC_LOCK",
+	}
 
 	if vaultConfig.AgentShareProcess {
 		securityContext.Capabilities.Add = append(securityContext.Capabilities.Add, "SYS_PTRACE")
