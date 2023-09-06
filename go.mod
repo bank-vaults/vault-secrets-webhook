@@ -20,7 +20,7 @@ require (
 	github.com/spf13/cast v1.5.1
 	github.com/spf13/viper v1.16.0
 	github.com/stretchr/testify v1.8.4
-	gocloud.dev v0.33.0
+	gocloud.dev v0.34.0
 	k8s.io/api v0.28.1
 	k8s.io/apimachinery v0.28.1
 	k8s.io/client-go v0.28.1
