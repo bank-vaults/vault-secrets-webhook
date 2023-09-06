@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-deployment-init-seccontext
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: test-deployment-init-seccontext
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: test-deployment-init-seccontext
+      annotations:
+        vault.security.banzaicloud.io/vault-addr: "https://vault.default.svc.cluster.local:8200"
+        vault.security.banzaicloud.io/vault-role: "default"
+        vault.security.banzaicloud.io/vault-tls-secret: vault-tls
+        # vault.security.banzaicloud.io/vault-skip-verify: "true"
+        vault.security.banzaicloud.io/vault-path: "kubernetes"
+        vault.security.banzaicloud.io/run-as-non-root: "true"
+        vault.security.banzaicloud.io/run-as-user: "1000"
+        vault.security.banzaicloud.io/run-as-group: "1000"
+    spec:
+      containers:
+        - name: alpine
+          image: alpine
+          command: ["sh", "-c", "echo $AWS_SECRET_ACCESS_KEY && echo going to sleep... && sleep 10000"]
+          env:
+          - name: AWS_SECRET_ACCESS_KEY
+            value: vault:secret/data/accounts/aws#AWS_SECRET_ACCESS_KEY
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "100m"

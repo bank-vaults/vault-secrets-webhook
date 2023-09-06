@@ -5,6 +5,7 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     flake-parts.url = "github:hercules-ci/flake-parts";
     devenv.url = "github:cachix/devenv";
+    garden.url = "github:sagikazarmark/nix-garden";
   };
 
   outputs = inputs@{ flake-parts, ... }:
@@ -43,30 +44,29 @@
               kubernetes-helm
               helm-docs
 
+              k3d
+
+              crc
+
               yamllint
               hadolint
             ] ++ [
+              inputs'.garden.packages.garden
               self'.packages.licensei
             ];
 
-            scripts = {
-              versions.exec = ''
-                go version
-                golangci-lint version
-                kind version
-                kubectl version --client
-                echo kustomize $(kustomize version --short)
-                echo helm $(helm version --short)
-              '';
+            env = {
+              GARDEN_DISABLE_ANALYTICS = "true";
+
+              KUBECONFIG = "${config.devenv.shells.default.env.DEVENV_STATE}/kube/config";
+              KIND_CLUSTER_NAME = "vault-secrets-webhook";
+
+              HELM_CACHE_HOME = "${config.devenv.shells.default.env.DEVENV_STATE}/helm/cache";
+              HELM_CONFIG_HOME = "${config.devenv.shells.default.env.DEVENV_STATE}/helm/config";
+              HELM_DATA_HOME = "${config.devenv.shells.default.env.DEVENV_STATE}/helm/data";
+
+              VAULT_TOKEN = "227e1cce-6bf7-30bb-2d2a-acc854318caf";
             };
-
-            enterShell = ''
-              # Vault
-              export VAULT_ADDR=http://127.0.0.1:8200
-              export VAULT_TOKEN=227e1cce-6bf7-30bb-2d2a-acc854318caf
-
-              versions
-            '';
 
             # https://github.com/cachix/devenv/issues/528#issuecomment-1556108767
             containers = pkgs.lib.mkForce { };

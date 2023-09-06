@@ -38,6 +38,9 @@ var vaultConfig = VaultConfig{
 	VaultEnvPassThrough:  "vaultEnvPassThrough",
 	EnableJSONLog:        "enableJSONLog",
 	ClientTimeout:        10 * time.Second,
+	RunAsNonRoot:         true,
+	RunAsUser:            int64(1000),
+	RunAsGroup:           int64(1000),
 }
 
 type MockRegistry struct {
@@ -506,6 +509,7 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 
 	baseSecurityContext := &corev1.SecurityContext{
 		RunAsUser:                &vaultConfig.RunAsUser,
+		RunAsGroup:               &vaultConfig.RunAsGroup,
 		RunAsNonRoot:             &vaultConfig.RunAsNonRoot,
 		ReadOnlyRootFilesystem:   &vaultConfig.ReadOnlyRootFilesystem,
 		AllowPrivilegeEscalation: &vaultConfig.PspAllowPrivilegeEscalation,
@@ -525,6 +529,7 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 
 	agentInitContainerSecurityContext := &corev1.SecurityContext{
 		RunAsUser:                &vaultConfig.RunAsUser,
+		RunAsGroup:               &vaultConfig.RunAsGroup,
 		RunAsNonRoot:             &vaultConfig.RunAsNonRoot,
 		ReadOnlyRootFilesystem:   &vaultConfig.ReadOnlyRootFilesystem,
 		AllowPrivilegeEscalation: &vaultConfig.PspAllowPrivilegeEscalation,
@@ -544,6 +549,7 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 
 	agentContainerSecurityContext := &corev1.SecurityContext{
 		RunAsUser:                &vaultConfig.RunAsUser,
+		RunAsGroup:               &vaultConfig.RunAsGroup,
 		RunAsNonRoot:             &vaultConfig.RunAsNonRoot,
 		ReadOnlyRootFilesystem:   &vaultConfig.ReadOnlyRootFilesystem,
 		AllowPrivilegeEscalation: &vaultConfig.PspAllowPrivilegeEscalation,
@@ -609,6 +615,9 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 					EnvCPULimit:                   resource.MustParse("250m"),
 					EnvMemoryLimit:                resource.MustParse("64Mi"),
 					ServiceAccountTokenVolumeName: "/var/run/secrets/kubernetes.io/serviceaccount",
+					RunAsNonRoot:                  true,
+					RunAsUser:                     int64(1000),
+					RunAsGroup:                    int64(1000),
 				},
 			},
 			wantedPod: &corev1.Pod{
@@ -803,6 +812,9 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 					EnvCPULimit:                   resource.MustParse("250m"),
 					EnvMemoryLimit:                resource.MustParse("64Mi"),
 					ServiceAccountTokenVolumeName: "/var/run/secrets/kubernetes.io/serviceaccount",
+					RunAsNonRoot:                  true,
+					RunAsUser:                     int64(1000),
+					RunAsGroup:                    int64(1000),
 				},
 			},
 			wantedPod: &corev1.Pod{
@@ -993,6 +1005,9 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 					AgentImagePullPolicy:          "IfNotPresent",
 					ServiceAccountTokenVolumeName: "/var/run/secrets/kubernetes.io/serviceaccount",
 					AgentEnvVariables:             "[{\"Name\": \"SKIP_SETCAP\",\"Value\": \"1\"}]",
+					RunAsNonRoot:                  true,
+					RunAsUser:                     int64(1000),
+					RunAsGroup:                    int64(1000),
 				},
 			},
 			wantedPod: &corev1.Pod{
@@ -1155,6 +1170,9 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 					EnvCPULimit:                   resource.MustParse("250m"),
 					EnvMemoryLimit:                resource.MustParse("64Mi"),
 					ServiceAccountTokenVolumeName: "/var/run/secrets/kubernetes.io/serviceaccount",
+					RunAsNonRoot:                  true,
+					RunAsUser:                     int64(1000),
+					RunAsGroup:                    int64(1000),
 				},
 			},
 			wantedPod: &corev1.Pod{
@@ -1374,6 +1392,9 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 					EnvCPULimit:                   resource.MustParse("250m"),
 					EnvMemoryLimit:                resource.MustParse("64Mi"),
 					ServiceAccountTokenVolumeName: "/var/run/secrets/vault",
+					RunAsNonRoot:                  true,
+					RunAsUser:                     int64(1000),
+					RunAsGroup:                    int64(1000),
 				},
 			},
 			wantedPod: &corev1.Pod{
