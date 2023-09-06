@@ -34,6 +34,8 @@ Run the test suite:
 
 ```shell
 make test
+
+make container-image
 make test-e2e-local
 ```
 
@@ -63,6 +65,43 @@ make stop
 # OR
 
 make down
+```
+
+### Running e2e tests
+
+The project comes with an e2e test suite that is mostly self-contained,
+but at the very least, you need Docker installed.
+
+By default, the suite launches a [KinD](https://kind.sigs.k8s.io/) cluster, deploys all necessary components and runs the test suite.
+This is a good option if you want to run the test suite to make sure everything works. This is also how the CI runs the test suite
+(with a few minor differences).
+
+You can run the test suite by running the following commands:
+
+```shell
+make container-image
+make test-e2e-local
+```
+
+Another way to run the test suite is using an existing cluster.
+This may be a better option if you want to debug tests or figure out why something isn't working.
+
+Set up a Kubernetes cluster of your liking. For example, launch a KinD cluster:
+
+```shell
+kind create cluster
+```
+
+Deploy the necessary components (including the webhook itself):
+
+```shell
+garden deploy
+```
+
+Run the test suite:
+
+```shell
+make BOOTSTRAP=false test-e2e
 ```
 
 ## License

@@ -683,6 +683,13 @@ func getInitContainers(originalContainers []corev1.Container, podSecurityContext
 		})
 
 		securityContext := getBaseSecurityContext(podSecurityContext, vaultConfig)
+		securityContext.Capabilities.Add = []corev1.Capability{
+			"CHOWN",
+			"SETFCAP",
+			"SETGID",
+			"SETPCAP",
+			"SETUID",
+		}
 
 		containers = append(containers, corev1.Container{
 			Name:            "vault-agent",
@@ -787,8 +794,14 @@ func getAgentContainers(originalContainers []corev1.Container, podSecurityContex
 	containers := []corev1.Container{}
 
 	securityContext := getBaseSecurityContext(podSecurityContext, vaultConfig)
-
-	securityContext.Capabilities.Add = append(securityContext.Capabilities.Add, "IPC_LOCK")
+	securityContext.Capabilities.Add = []corev1.Capability{
+		"CHOWN",
+		"SETFCAP",
+		"SETGID",
+		"SETPCAP",
+		"SETUID",
+		"IPC_LOCK",
+	}
 
 	if vaultConfig.AgentShareProcess {
 		securityContext.Capabilities.Add = append(securityContext.Capabilities.Add, "SYS_PTRACE")
@@ -845,8 +858,6 @@ func getAgentContainers(originalContainers []corev1.Container, podSecurityContex
 func getBaseSecurityContext(podSecurityContext *corev1.PodSecurityContext, vaultConfig VaultConfig) *corev1.SecurityContext {
 	context := &corev1.SecurityContext{
 		AllowPrivilegeEscalation: &vaultConfig.PspAllowPrivilegeEscalation,
-		RunAsNonRoot:             &vaultConfig.RunAsNonRoot,
-		RunAsUser:                &vaultConfig.RunAsUser,
 		ReadOnlyRootFilesystem:   &vaultConfig.ReadOnlyRootFilesystem,
 		Capabilities: &corev1.Capabilities{
 			Add: []corev1.Capability{
@@ -864,6 +875,12 @@ func getBaseSecurityContext(podSecurityContext *corev1.PodSecurityContext, vault
 
 	if podSecurityContext != nil && podSecurityContext.RunAsUser != nil {
 		context.RunAsUser = podSecurityContext.RunAsUser
+	}
+
+	// Although it could explicitly be set to false,
+	// the behavior of false and unset are the same
+	if vaultConfig.RunAsNonRoot {
+		context.RunAsNonRoot = &vaultConfig.RunAsNonRoot
 	}
 
 	if vaultConfig.RunAsUser > 0 {
