@@ -18,6 +18,8 @@ certificate:
     crt:
   extraAltNames: []
   # use extra names if you want use the webhook via an ingress or a loadbalancer
+  caLifespan: 3650
+  certLifespan: 365
 
 image:
   repository: ghcr.io/bank-vaults/vault-secrets-webhook

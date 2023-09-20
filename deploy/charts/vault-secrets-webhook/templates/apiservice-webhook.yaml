@@ -2,12 +2,12 @@
 {{- $tlsKey := "" }}
 {{- $caCrt := "" }}
 {{- if .Values.certificate.generate }}
-{{- $ca := genCA "svc-cat-ca" 3650 }}
+{{- $ca := genCA "svc-cat-ca" .Values.certificate.caLifespan }}
 {{- $svcName := include "vault-secrets-webhook.fullname" . }}
 {{- $cn := printf "%s.%s.svc" $svcName .Release.Namespace }}
 {{- $altName1 := printf "%s.cluster.local" $cn }}
 {{- $altName2 := printf "%s" $cn }}
-{{- $server := genSignedCert $cn nil (concat (list $altName1 $altName2) .Values.certificate.extraAltNames) 365 $ca }}
+{{- $server := genSignedCert $cn nil (concat (list $altName1 $altName2) .Values.certificate.extraAltNames) .Values.certificate.certLifespan $ca }}
 {{- $tlsCrt = b64enc $server.Cert }}
 {{- $tlsKey = b64enc $server.Key }}
 {{- $caCrt =  b64enc $ca.Cert }}
