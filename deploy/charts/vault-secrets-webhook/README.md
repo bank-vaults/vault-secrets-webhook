@@ -142,6 +142,8 @@ The following tables lists configurable parameters of the vault-secrets-webhook 
 | podDisruptionBudget.minAvailable   | represents the number of Pods that must be available (integer or percentage)  | `1`                                                      |
 | podDisruptionBudget.maxUnavailable | represents the number of Pods that can be unavailable (integer or percentage) | ` `                                                      |
 | certificate.generate               | should a new CA and TLS certificate be generated for the webhook              | `true`                                                   |
+| certificate.caLifespan             | the number of days from the creation of the CA certificate until it expires   | `3650`                                                   |
+| certificate.certLifespan           | the number of days from the creation of the TLS certificate until it expires  | `365`                                                    |
 | certificate.useCertManager         | should request cert-manager for getting a new CA and TLS certificate          | `false`                                                  |
 | certificate.servingCertificate     | should use an already externally defined Certificate by cert-manager          | `null`                                                   |
 | certificate.ca.crt                 | Base64 encoded CA certificate                                                 | ``                                                       |
