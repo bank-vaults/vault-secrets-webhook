@@ -8,7 +8,7 @@
 
 ## Documentation
 
-The official documentation for the operator is available at [https://bank-vaults.dev](https://bank-vaults.dev/docs/operator/).
+The official documentation for the webhook is available at [https://bank-vaults.dev](https://bank-vaults.dev/docs/mutating-webhook/).
 
 ## Development
 
