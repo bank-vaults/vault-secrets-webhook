@@ -39,6 +39,7 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/envfuncs"
+	"sigs.k8s.io/e2e-framework/support/kind"
 	"sigs.k8s.io/e2e-framework/third_party/helm"
 )
 
@@ -77,13 +78,15 @@ func TestMain(m *testing.M) {
 	} else {
 		clusterName := envconf.RandomName("vault-secrets-webhook-test", 32)
 
+		kindCluster := kind.NewProvider()
 		if v := os.Getenv("KIND_K8S_VERSION"); v != "" {
-			testenv.Setup(envfuncs.CreateKindClusterWithConfig(clusterName, "kindest/node:"+v, "kind.yaml"))
+			kindCluster.WithOpts(kind.WithImage("kindest/node:" + v))
+			testenv.Setup(envfuncs.CreateClusterWithConfig(kindCluster, clusterName, "kind.yaml"))
 		} else {
-			testenv.Setup(envfuncs.CreateKindCluster(clusterName))
+			testenv.Setup(envfuncs.CreateCluster(kindCluster, clusterName))
 		}
 
-		testenv.Finish(envfuncs.DestroyKindCluster(clusterName))
+		testenv.Finish(envfuncs.DestroyCluster(clusterName))
 
 		if image := os.Getenv("LOAD_IMAGE"); image != "" {
 			testenv.Setup(envfuncs.LoadDockerImageToCluster(clusterName, image))
