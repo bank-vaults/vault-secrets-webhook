@@ -17,6 +17,8 @@ package webhook
 import (
 	"context"
 	"crypto/x509"
+	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"strings"
@@ -26,7 +28,6 @@ import (
 	"github.com/bank-vaults/internal/injector"
 	"github.com/bank-vaults/vault-sdk/vault"
 	vaultapi "github.com/hashicorp/vault/api"
-	"github.com/sirupsen/logrus"
 	"github.com/slok/kubewebhook/v2/pkg/log"
 	"github.com/slok/kubewebhook/v2/pkg/model"
 	"github.com/slok/kubewebhook/v2/pkg/webhook/mutating"
@@ -36,14 +37,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/kubernetes"
-	logrusadapter "logur.dev/adapter/logrus"
 )
 
 type MutatingWebhook struct {
 	k8sClient kubernetes.Interface
 	namespace string
 	registry  ImageRegistry
-	logger    *logrus.Entry
+	logger    *slog.Logger
 }
 
 func (mw *MutatingWebhook) VaultSecretsMutator(ctx context.Context, ar *model.AdmissionReview, obj metav1.Object) (*mutating.MutatorResult, error) {
@@ -69,7 +69,7 @@ func (mw *MutatingWebhook) VaultSecretsMutator(ctx context.Context, ar *model.Ad
 		return &mutating.MutatorResult{}, errors.Wrap(err, "error templating vault_role")
 	}
 	vaultConfig.Role = vRoleBuf.String()
-	mw.logger.Debugf("vaultConfig.Role = '%s'", vaultConfig.Role)
+	mw.logger.Debug(fmt.Sprintf("vaultConfig.Role = '%s'", vaultConfig.Role))
 
 	switch v := obj.(type) {
 	case *corev1.Pod:
@@ -267,7 +267,7 @@ func (mw *MutatingWebhook) newVaultClient(vaultConfig VaultConfig) (*vault.Clien
 			vault.ClientRole(vaultConfig.Role),
 			vault.ClientAuthPath(vaultConfig.Path),
 			vault.NamespacedSecretAuthMethod,
-			vault.ClientLogger(logrusadapter.NewFromEntry(mw.logger)),
+			vault.ClientLogger(&clientLogger{logger: mw.logger}),
 			vault.ExistingSecret(saToken),
 			vault.VaultNamespace(vaultConfig.VaultNamespace),
 		)
@@ -278,23 +278,24 @@ func (mw *MutatingWebhook) newVaultClient(vaultConfig VaultConfig) (*vault.Clien
 		vault.ClientRole(vaultConfig.Role),
 		vault.ClientAuthPath(vaultConfig.Path),
 		vault.ClientAuthMethod(vaultConfig.AuthMethod),
-		vault.ClientLogger(logrusadapter.NewFromEntry(mw.logger)),
+		vault.ClientLogger(&clientLogger{logger: mw.logger}),
 		vault.VaultNamespace(vaultConfig.VaultNamespace),
 	)
 }
 
 func (mw *MutatingWebhook) ServeMetrics(addr string, handler http.Handler) {
-	mw.logger.Infof("Telemetry on http://%s", addr)
+	mw.logger.Info(fmt.Sprintf("Telemetry on http://%s", addr))
 
 	mux := http.NewServeMux()
 	mux.Handle("/metrics", handler)
 	err := http.ListenAndServe(addr, mux)
 	if err != nil {
-		mw.logger.Fatalf("error serving telemetry: %s", err)
+		mw.logger.Error(fmt.Errorf("error serving telemetry: %w", err).Error())
+		os.Exit(1)
 	}
 }
 
-func NewMutatingWebhook(logger *logrus.Entry, k8sClient kubernetes.Interface) (*MutatingWebhook, error) {
+func NewMutatingWebhook(logger *slog.Logger, k8sClient kubernetes.Interface) (*MutatingWebhook, error) {
 	namespace := os.Getenv("KUBERNETES_NAMESPACE") // only for kurun
 	if namespace == "" {
 		namespaceBytes, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace")

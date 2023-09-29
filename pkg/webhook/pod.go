@@ -56,7 +56,7 @@ func (mw *MutatingWebhook) MutatePod(ctx context.Context, pod *corev1.Pod, vault
 	mw.logger.Debug("Successfully connected to the API")
 
 	if isPodAlreadyMutated(pod) {
-		mw.logger.Infof("Pod %s is already mutated, skipping mutation.", pod.Name)
+		mw.logger.Info(fmt.Sprintf("Pod %s is already mutated, skipping mutation.", pod.Name))
 		return nil
 	}
 
@@ -130,10 +130,10 @@ func (mw *MutatingWebhook) MutatePod(ctx context.Context, pod *corev1.Pod, vault
 		mw.addSecretsVolToContainers(vaultConfig, pod.Spec.Containers)
 
 		if vaultConfig.CtShareProcessDefault == "empty" {
-			mw.logger.Debugf("Test our Kubernetes API Version and make the final decision on enabling ShareProcessNamespace")
+			mw.logger.Debug("Test our Kubernetes API Version and make the final decision on enabling ShareProcessNamespace")
 			apiVersion, _ := mw.k8sClient.Discovery().ServerVersion()
 			versionCompared := kubeVer.CompareKubeAwareVersionStrings("v1.12.0", apiVersion.String())
-			mw.logger.Debugf("Kubernetes API version detected: %s", apiVersion.String())
+			mw.logger.Debug(fmt.Sprintf("Kubernetes API version detected: %s", apiVersion.String()))
 
 			if versionCompared >= 0 {
 				vaultConfig.CtShareProcess = true
@@ -143,7 +143,7 @@ func (mw *MutatingWebhook) MutatePod(ctx context.Context, pod *corev1.Pod, vault
 		}
 
 		if vaultConfig.CtShareProcess {
-			mw.logger.Debugf("Detected shared process namespace")
+			mw.logger.Debug("Detected shared process namespace")
 			shareProcessNamespace := true
 			pod.Spec.ShareProcessNamespace = &shareProcessNamespace
 		}
@@ -200,7 +200,7 @@ func (mw *MutatingWebhook) MutatePod(ctx context.Context, pod *corev1.Pod, vault
 			mw.logger.Debug("Test our Kubernetes API Version and make the final decision on enabling ShareProcessNamespace")
 			apiVersion, _ := mw.k8sClient.Discovery().ServerVersion()
 			versionCompared := kubeVer.CompareKubeAwareVersionStrings("v1.12.0", apiVersion.String())
-			mw.logger.Debugf("Kubernetes API version detected: %s", apiVersion.String())
+			mw.logger.Debug(fmt.Sprintf("Kubernetes API version detected: %s", apiVersion.String()))
 
 			if versionCompared >= 0 {
 				vaultConfig.AgentShareProcess = true
@@ -464,7 +464,7 @@ func (mw *MutatingWebhook) mutateContainers(ctx context.Context, containers []co
 
 func (mw *MutatingWebhook) addSecretsVolToContainers(vaultConfig VaultConfig, containers []corev1.Container) {
 	for i, container := range containers {
-		mw.logger.Debugf("Add secrets VolumeMount to container %s", container.Name)
+		mw.logger.Debug(fmt.Sprintf("Add secrets VolumeMount to container %s", container.Name))
 
 		container.VolumeMounts = append(container.VolumeMounts, []corev1.VolumeMount{
 			{
@@ -479,7 +479,7 @@ func (mw *MutatingWebhook) addSecretsVolToContainers(vaultConfig VaultConfig, co
 
 func (mw *MutatingWebhook) addAgentSecretsVolToContainers(vaultConfig VaultConfig, containers []corev1.Container) {
 	for i, container := range containers {
-		mw.logger.Debugf("Add secrets VolumeMount to container %s", container.Name)
+		mw.logger.Debug(fmt.Sprintf("Add secrets VolumeMount to container %s", container.Name))
 
 		container.VolumeMounts = append(container.VolumeMounts, []corev1.VolumeMount{
 			{

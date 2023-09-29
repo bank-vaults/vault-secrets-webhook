@@ -16,11 +16,13 @@ package main
 
 import (
 	"crypto/tls"
+	"fmt"
+	"log/slog"
+	"os"
 	"path/filepath"
 	"sync"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/sirupsen/logrus"
 )
 
 type CertificateReloader struct {
@@ -49,15 +51,17 @@ func NewCertificateReloader(certPath string, keyPath string) (*CertificateReload
 func (kpr *CertificateReloader) watchCertificate() {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		logrus.Fatal(err)
+		slog.Error(err.Error())
+		os.Exit(1)
 	}
 	defer watcher.Close()
 
 	certDir, _ := filepath.Split(kpr.certPath)
-	logrus.Infof("watching directory for changes: %s", certDir)
+	slog.Info(fmt.Sprintf("watching directory for changes: %s", certDir))
 	err = watcher.Add(certDir)
 	if err != nil {
-		logrus.Fatal(err)
+		slog.Error(err.Error())
+		os.Exit(1)
 	}
 
 	for {
@@ -65,13 +69,13 @@ func (kpr *CertificateReloader) watchCertificate() {
 		case event := <-watcher.Events:
 			if (event.Op&fsnotify.Create == fsnotify.Create || event.Op&fsnotify.Write == fsnotify.Write) && filepath.Base(event.Name) == "..data" {
 				if err := kpr.Reload(); err != nil {
-					logrus.Errorf("Keeping old certificate because the new one could not be loaded: %s", err.Error())
+					slog.Error(fmt.Errorf("keeping old certificate because the new one could not be loaded: %w", err).Error())
 				} else {
-					logrus.Infof("Certificate has change, reloading: %s", kpr.certPath)
+					slog.Info(fmt.Sprintf("Certificate has change, reloading: %s", kpr.certPath))
 				}
 			}
 		case err := <-watcher.Errors:
-			logrus.Errorf("watcher event error: %s", err.Error())
+			slog.Error(fmt.Errorf("watcher event error: %w", err).Error())
 		}
 	}
 }

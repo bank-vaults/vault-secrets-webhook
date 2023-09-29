@@ -16,12 +16,12 @@ package webhook
 
 import (
 	"context"
+	"log/slog"
 	"testing"
 	"time"
 
 	cmp "github.com/google/go-cmp/cmp"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
-	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/client-go/kubernetes"
@@ -476,7 +476,7 @@ func Test_mutatingWebhook_mutateContainers(t *testing.T) {
 			mw := &MutatingWebhook{
 				k8sClient: ttp.fields.k8sClient,
 				registry:  ttp.fields.registry,
-				logger:    logrus.NewEntry(logrus.New()),
+				logger:    slog.Default(),
 			}
 			got, err := mw.mutateContainers(context.Background(), ttp.args.containers, ttp.args.podSpec, ttp.args.vaultConfig)
 			if (err != nil) != ttp.wantErr {
@@ -1569,7 +1569,7 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 			mw := &MutatingWebhook{
 				k8sClient: ttp.fields.k8sClient,
 				registry:  ttp.fields.registry,
-				logger:    logrus.NewEntry(logrus.New()),
+				logger:    slog.Default(),
 			}
 			err := mw.MutatePod(context.Background(), ttp.args.pod, ttp.args.vaultConfig, false)
 			if (err != nil) != ttp.wantErr {
