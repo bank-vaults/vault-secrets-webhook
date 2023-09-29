@@ -23,6 +23,7 @@ import (
 	"text/template"
 
 	"emperror.dev/errors"
+	"github.com/bank-vaults/internal/injector"
 	"github.com/bank-vaults/vault-sdk/vault"
 	vaultapi "github.com/hashicorp/vault/api"
 	"github.com/sirupsen/logrus"
@@ -36,8 +37,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/kubernetes"
 	logrusadapter "logur.dev/adapter/logrus"
-
-	"github.com/bank-vaults/vault-secrets-webhook/internal/injector"
 )
 
 type MutatingWebhook struct {

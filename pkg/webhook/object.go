@@ -18,9 +18,8 @@ import (
 	"strings"
 
 	"emperror.dev/errors"
+	"github.com/bank-vaults/internal/injector"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-
-	"github.com/bank-vaults/vault-secrets-webhook/internal/injector"
 )
 
 type element interface {
