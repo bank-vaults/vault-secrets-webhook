@@ -268,6 +268,6 @@ jobs:
 
     steps:
       - name: Block Merge Commits
-        uses: xt0rted/block-autosquash-commits-action@v2
+        uses: Morishiri/block-merge-commits-action@v1.0.1
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
