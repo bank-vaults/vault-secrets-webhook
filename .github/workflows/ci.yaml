@@ -260,3 +260,14 @@ jobs:
           WEBHOOK_VERSION: ${{ needs.artifacts.outputs.container-image-tag }}
           HELM_CHART: "${{ github.workspace }}/${{ needs.artifacts.outputs.helm-chart-package }}"
           LOG_VERBOSE: "true"
+
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Block Merge Commits
+        uses: xt0rted/block-autosquash-commits-action@v2
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
