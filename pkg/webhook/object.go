@@ -15,12 +15,12 @@
 package webhook
 
 import (
+	"fmt"
 	"strings"
 
 	"emperror.dev/errors"
+	"github.com/bank-vaults/internal/injector"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-
-	"github.com/bank-vaults/vault-secrets-webhook/internal/injector"
 )
 
 type element interface {
@@ -119,7 +119,7 @@ func traverseObject(o interface{}, secretInjector *injector.SecretInjector) erro
 }
 
 func (mw *MutatingWebhook) MutateObject(object *unstructured.Unstructured, vaultConfig VaultConfig) error {
-	mw.logger.Debugf("mutating object: %s.%s", object.GetNamespace(), object.GetName())
+	mw.logger.Debug(fmt.Sprintf("mutating object: %s.%s", object.GetNamespace(), object.GetName()))
 
 	vaultClient, err := mw.newVaultClient(vaultConfig)
 	if err != nil {

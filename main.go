@@ -15,14 +15,18 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
+	"fmt"
+	"log/slog"
 	"net/http"
+	"os"
+	"slices"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/sirupsen/logrus"
+	slogmulti "github.com/samber/slog-multi"
 	whhttp "github.com/slok/kubewebhook/v2/pkg/http"
-	whlog "github.com/slok/kubewebhook/v2/pkg/log/logrus"
 	whmetrics "github.com/slok/kubewebhook/v2/pkg/metrics/prometheus"
 	whwebhook "github.com/slok/kubewebhook/v2/pkg/webhook"
 	"github.com/slok/kubewebhook/v2/pkg/webhook/mutating"
@@ -80,41 +84,77 @@ func newHTTPServer(tlsCertFile string, tlsPrivateKeyFile string, listenAddress s
 }
 
 func main() {
-	var logger *logrus.Entry
+	var logger *slog.Logger
 	{
-		l := logrus.New()
+		var level slog.Level
+
+		err := level.UnmarshalText([]byte(viper.GetString("log_level")))
+		if err != nil { // Silently fall back to info level
+			level = slog.LevelInfo
+		}
+
+		levelFilter := func(levels ...slog.Level) func(ctx context.Context, r slog.Record) bool {
+			return func(ctx context.Context, r slog.Record) bool {
+				return slices.Contains(levels, r.Level)
+			}
+		}
+
+		router := slogmulti.Router()
 
 		if viper.GetBool("enable_json_log") {
-			l.SetFormatter(&logrus.JSONFormatter{})
+			// Send logs with level higher than warning to stderr
+			router = router.Add(
+				slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelWarn}),
+				levelFilter(slog.LevelWarn, slog.LevelError),
+			)
+
+			// Send info and debug logs to stdout
+			router = router.Add(
+				slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: level}),
+				levelFilter(slog.LevelDebug, slog.LevelInfo),
+			)
+		} else {
+			// Send logs with level higher than warning to stderr
+			router = router.Add(
+				slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelWarn}),
+				levelFilter(slog.LevelWarn, slog.LevelError),
+			)
+
+			// Send info and debug logs to stdout
+			router = router.Add(
+				slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: level}),
+				levelFilter(slog.LevelDebug, slog.LevelInfo),
+			)
 		}
 
-		lvl, err := logrus.ParseLevel(viper.GetString("log_level"))
-		if err != nil {
-			lvl = logrus.InfoLevel
-		}
-		l.SetLevel(lvl)
+		// TODO: add level filter handler
+		logger = slog.New(router.Handler())
+		logger = logger.With(slog.String("app", "vault-secrets-webhook"))
 
-		logger = l.WithField("app", "vault-secrets-webhook")
+		slog.SetDefault(logger)
 	}
 
 	k8sClient, err := newK8SClient()
 	if err != nil {
-		logger.Fatalf("error creating k8s client: %s", err)
+		logger.Error(fmt.Errorf("error creating k8s client: %w", err).Error())
+		os.Exit(1)
 	}
 
 	mutatingWebhook, err := webhook.NewMutatingWebhook(logger, k8sClient)
 	if err != nil {
-		logger.Fatalf("error creating mutating webhook: %s", err)
+		logger.Error(fmt.Errorf("error creating mutating webhook: %w", err).Error())
+		os.Exit(1)
 	}
 
-	whLogger := whlog.NewLogrus(logger)
+	whLogger := webhook.NewWhLogger(logger)
 
 	mutator := webhook.ErrorLoggerMutator(mutatingWebhook.VaultSecretsMutator, whLogger)
 
 	promRegistry := prometheus.NewRegistry()
 	metricsRecorder, err := whmetrics.NewRecorder(whmetrics.RecorderConfig{Registry: promRegistry})
 	if err != nil {
-		logger.Fatalf("error creating metrics recorder: %s", err)
+		logger.Error(fmt.Errorf("error creating metrics recorder: %w", err).Error())
+		os.Exit(1)
 	}
 
 	promHandler := promhttp.HandlerFor(promRegistry, promhttp.HandlerOpts{})
@@ -143,15 +183,16 @@ func main() {
 	}
 
 	if tlsCertFile == "" && tlsPrivateKeyFile == "" {
-		logger.Infof("Listening on http://%s", listenAddress)
+		logger.Info(fmt.Sprintf("Listening on http://%s", listenAddress))
 		err = http.ListenAndServe(listenAddress, mux)
 	} else {
 		srv := newHTTPServer(tlsCertFile, tlsPrivateKeyFile, listenAddress, mux)
-		logger.Infof("Listening on https://%s", listenAddress)
+		logger.Info(fmt.Sprintf("Listening on https://%s", listenAddress))
 		err = srv.ListenAndServeTLS("", "")
 	}
 
 	if err != nil {
-		logger.Fatalf("error serving webhook: %s", err)
+		logger.Error(fmt.Errorf("error serving webhook: %w", err).Error())
+		os.Exit(1)
 	}
 }

@@ -21,9 +21,8 @@ import (
 	"strings"
 
 	"emperror.dev/errors"
+	"github.com/bank-vaults/internal/injector"
 	corev1 "k8s.io/api/core/v1"
-
-	"github.com/bank-vaults/vault-secrets-webhook/internal/injector"
 )
 
 type dockerCredentials struct {

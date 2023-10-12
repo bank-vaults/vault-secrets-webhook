@@ -3,6 +3,7 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    nixpkgs-23-05.url = "github:NixOS/nixpkgs/release-23.05"; # TODO: remove once helm is fixed
     flake-parts.url = "github:hercules-ci/flake-parts";
     devenv.url = "github:cachix/devenv";
     garden.url = "github:sagikazarmark/nix-garden";
@@ -21,6 +22,7 @@
           default = {
             languages = {
               go.enable = true;
+              go.package = pkgs.go_1_21;
             };
 
             services = {
@@ -36,12 +38,16 @@
             packages = with pkgs; [
               gnumake
 
-              golangci-lint
+              # golangci-lint
+              # TODO: remove once https://github.com/NixOS/nixpkgs/pull/254878 hits unstable
+              (golangci-lint.override (prev: {
+                buildGoModule = pkgs.buildGo121Module;
+              }))
 
               kind
               kubectl
               kustomize
-              kubernetes-helm
+              # kubernetes-helm
               helm-docs
 
               k3d
@@ -52,6 +58,7 @@
               hadolint
             ] ++ [
               inputs'.garden.packages.garden
+              inputs'.nixpkgs-23-05.legacyPackages.kubernetes-helm
               self'.packages.licensei
             ];
 

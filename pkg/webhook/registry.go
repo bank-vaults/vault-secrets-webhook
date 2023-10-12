@@ -17,7 +17,11 @@ package webhook
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
+	"log/slog"
 	"net/http"
+	"os"
+	"slices"
 
 	"emperror.dev/errors"
 	"github.com/google/go-containerregistry/pkg/authn/k8schain"
@@ -25,19 +29,47 @@ import (
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/patrickmn/go-cache"
-	log "github.com/sirupsen/logrus"
+	slogmulti "github.com/samber/slog-multi"
 	"github.com/spf13/viper"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
-var logger *log.Logger
+var logger *slog.Logger
 
 func init() {
-	logger = log.New()
-	if viper.GetBool("enable_json_log") {
-		logger.SetFormatter(&log.JSONFormatter{})
+	router := slogmulti.Router()
+
+	levelFilter := func(levels ...slog.Level) func(ctx context.Context, r slog.Record) bool {
+		return func(ctx context.Context, r slog.Record) bool {
+			return slices.Contains(levels, r.Level)
+		}
 	}
+
+	if viper.GetBool("enable_json_log") {
+		// Send logs with level higher than warning to stderr
+		router = router.Add(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelWarn}))
+
+		// Send info and debug logs to stdout
+		router = router.Add(
+			slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}),
+			levelFilter(slog.LevelDebug, slog.LevelInfo),
+		)
+	} else {
+		// Send logs with level higher than warning to stderr
+		router = router.Add(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelWarn}))
+
+		// Send info and debug logs to stdout
+		router = router.Add(
+			slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}),
+			levelFilter(slog.LevelDebug, slog.LevelInfo),
+		)
+	}
+
+	// TODO: add level filter handler
+	logger = slog.New(router.Handler())
+
+	slog.SetDefault(logger)
 }
 
 // ImageRegistry is a docker registry
@@ -89,7 +121,7 @@ func (r *Registry) GetImageConfig(
 	allowToCache := IsAllowedToCache(container)
 	if allowToCache {
 		if imageConfig, cacheHit := r.imageCache.Get(container.Image); cacheHit {
-			logger.Infof("found image %s in cache", container.Image)
+			logger.Info(fmt.Sprintf("found image %s in cache", container.Image))
 
 			return imageConfig.(*v1.Config), nil
 		}

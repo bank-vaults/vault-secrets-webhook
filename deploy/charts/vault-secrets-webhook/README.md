@@ -102,7 +102,7 @@ The following tables lists configurable parameters of the vault-secrets-webhook 
 | image.tag                          | image tag                                                                     | `.Chart.AppVersion`                                      |
 | image.imagePullSecrets             | image pull secrets for private repositories                                   | `[]`                                                     |
 | vaultEnv.repository                | image repo that contains the vault-env container                              | `ghcr.io/bank-vaults/vault-env`                          |
-| vaultEnv.tag                       | image tag for the vault-env container                                         | `v1.21.0`                                                |
+| vaultEnv.tag                       | image tag for the vault-env container                                         | `v1.21.1`                                                |
 | namespaceSelector                  | namespace selector to use, will limit webhook scope                           | `{}`                                                     |
 | objectSelector                     | object selector to use, will limit webhook scope (K8s version 1.15+)          | `{}`                                                     |
 | nodeSelector                       | node selector to use                                                          | `{}`                                                     |
