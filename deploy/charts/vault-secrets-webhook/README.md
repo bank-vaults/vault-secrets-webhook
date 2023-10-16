@@ -102,9 +102,9 @@ You can read more information on how to add firewall rules for the GKE control p
 | certificate.useCertManager | bool | `false` | Should request cert-manager for getting a new CA and TLS certificate |
 | certificate.servingCertificate | string | `nil` | Should use an already externally defined Certificate by cert-manager |
 | certificate.generate | bool | `true` | Should a new CA and TLS certificate be generated for the webhook |
-| certificate.server.tls.crt | string | `nil` | Base64 encoded TLS certificate signed by the CA |
-| certificate.server.tls.key | string | `nil` | Base64 encoded private key of TLS certificate signed by the CA |
-| certificate.ca.crt | string | `nil` | Base64 encoded CA certificate |
+| certificate.server.tls.crt | string | `""` | Base64 encoded TLS certificate signed by the CA |
+| certificate.server.tls.key | string | `""` | Base64 encoded private key of TLS certificate signed by the CA |
+| certificate.ca.crt | string | `""` | Base64 encoded CA certificate |
 | certificate.extraAltNames | list | `[]` | Use extra names if you want to use the webhook via an ingress or a loadbalancer |
 | certificate.caLifespan | int | `3650` | The number of days from the creation of the CA certificate until it expires |
 | certificate.certLifespan | int | `365` | The number of days from the creation of the TLS certificate until it expires |
@@ -120,28 +120,19 @@ You can read more information on how to add firewall rules for the GKE control p
 | ingress.enabled | bool | `false` | Webhook ingress enabled |
 | ingress.annotations | object | `{}` | Webhook ingress annotations |
 | ingress.host | string | `""` | Webhook ingress host |
-| webhookClientConfig.useUrl | bool | `false` | Use url if webhook should be contacted over loadbalancer or ingress instead of service object. |
+| webhookClientConfig.useUrl | bool | `false` | By default the mutating webhook uses the service of the webhook directly to contact webhook. Use url if webhook should be contacted over loadbalancer or ingress instead of service object. |
 | webhookClientConfig.url | string | `"https://example.com"` | Set the url how the webhook should be contacted (including protocol https://) |
 | vaultEnv.repository | string | `"ghcr.io/bank-vaults/vault-env"` | Image repo for the vault-env container |
 | vaultEnv.tag | string | `"v1.21.1"` | Image tag for the vault-env container |
-| env.VAULT_IMAGE | string | `"hashicorp/vault:1.14.1"` | Vault image |
-| env.DEFAULT_IMAGE_PULL_SECRET | string | `""` | Used when the pod that should get secret injected does not specify an imagePullSecret |
-| env.DEFAULT_IMAGE_PULL_SECRET_NAMESPACE | string | `""` | Used when the pod that should get secret injected does not specify an imagePullSecret |
-| env.DEFAULT_IMAGE_PULL_SECRET_SERVICE_ACCOUNT | string | `""` | Used when the pod that should get secret injected does not specify an imagePullSecret |
-| env.VAULT_CLIENT_TIMEOUT | string | `"10s"` | Define the webhook's timeout for Vault communication, if not defined individually in resources by annotations |
-| env.VAULT_ROLE | string | `""` | Define the webhook's role in Vault used for authentication, if not defined individually in resources by annotations |
-| env.VAULT_ENV_CPU_REQUEST | string | `"50m"` | Cpu requests for init-containers vault-env and copy-vault-env |
-| env.VAULT_ENV_CPU_LIMIT | string | `"250m"` | Cpu limits for init-containers vault-env and copy-vault-env |
-| env.VAULT_ENV_MEMORY_REQUEST | string | `"64Mi"` | Memory requests for init-containers vault-env and copy-vault-env |
-| env.VAULT_ENV_MEMORY_LIMIT | string | `"64Mi"` | Memory limits for init-containers vault-env and copy-vault-env |
-| env.VAULT_ENV_LOG_SERVER | string | `""` | Define remote log server for vault-env |
+| env | string | `nil` |  |
 | initContainers | list | `[]` | Containers to run before the app containers are started |
 | metrics.enabled | bool | `false` | Enable metrics |
 | metrics.port | int | `8443` | Metrics endpoint |
 | metrics.serviceMonitor.enabled | bool | `false` | Enable service monitor |
 | metrics.serviceMonitor.scheme | string | `"https"` | Service monitor scheme |
 | metrics.serviceMonitor.tlsConfig.insecureSkipVerify | bool | `true` | Skip TLS check for service monitor |
-| securityContext | object | `{"allowPrivilegeEscalation":false,"runAsUser":65534}` | Container security context for webhook deployment |
+| securityContext.runAsUser | int | `65534` | Run containers in webhook deployment as specified user |
+| securityContext.allowPrivilegeEscalation | bool | `false` | Allow process to gain more privileges than its parent process |
 | podSecurityContext | object | `{}` | Pod security context for webhook deployment |
 | volumes | list | `[]` | Extra volume definitions |
 | volumeMounts | list | `[]` | Extra volume mounts |
@@ -157,8 +148,8 @@ You can read more information on how to add firewall rules for the GKE control p
 | rbac.authDelegatorRole.enabled | bool | `false` | Bind `system:auth-delegator` to the ServiceAccount |
 | serviceAccount.create | bool | `true` | Specifies whether a service account should be created |
 | serviceAccount.labels | object | `{}` | Labels to add to the service account |
-| serviceAccount.annotations | object | `{}` | To enable GKE workload identity, use for example `iam.gke.io/gcp-service-account: gsa@project.iam.gserviceaccount.com`. |
-| serviceAccount.name | string | `""` | If not set and create is true, a name is generated using the fullname template |
+| serviceAccount.annotations | object | `{}` | Annotations to add to the service account. To enable GKE workload identity, use for example `iam.gke.io/gcp-service-account: gsa@project.iam.gserviceaccount.com`. |
+| serviceAccount.name | string | `""` | The name of the service account to use. If not set and create is true, a name is generated using the fullname template |
 | deployment.strategy | object | `{}` | Rolling strategy for webhook deployment |
 | customResourceMutations | list | `[]` | List of CustomResources to inject values from Vault, for example: ["ingresses", "servicemonitors"] |
 | customResourcesFailurePolicy | string | `"Ignore"` |  |
@@ -168,17 +159,21 @@ You can read more information on how to add firewall rules for the GKE control p
 | podsFailurePolicy | string | `"Ignore"` |  |
 | secretsFailurePolicy | string | `"Ignore"` |  |
 | apiSideEffectValue | string | `"NoneOnDryRun"` | Webhook sideEffect value |
-| namespaceSelector | object | `{"matchExpressions":[{"key":"kubernetes.io/metadata.name","operator":"NotIn","values":["kube-system"]}]}` | Namespace selector to use, will limit webhook scope |
+| namespaceSelector | object | `{}` | Namespace selector to use, will limit webhook scope |
 | objectSelector | object | `{}` | Object selector to use, will limit webhook scope (K8s version 1.15+) |
-| secrets | object | `{"namespaceSelector":{},"objectSelector":{}}` | Object and namespace selector for secrets (overrides `objectSelector`); Requires K8s 1.15+ |
-| pods | object | `{"namespaceSelector":{},"objectSelector":{}}` | Object and namespace selector for pods (overrides `objectSelector`); Requires K8s 1.15+ |
-| configMaps | object | `{"namespaceSelector":{},"objectSelector":{}}` | Object and namespace selector for configmaps (overrides `objectSelector`); Requires K8s 1.15+ |
-| customResources | object | `{"namespaceSelector":{},"objectSelector":{}}` | Object and namespace selector for custom resources (overrides `objectSelector`); Requires K8s 1.15+ |
+| secrets.objectSelector | object | `{}` | Object selector for secrets (overrides `objectSelector`); Requires K8s 1.15+ |
+| secrets.namespaceSelector | object | `{}` | Namespace selector for secrets (overrides `objectSelector`); Requires K8s 1.15+ |
+| pods.objectSelector | object | `{}` | Object selector for secrets (overrides `objectSelector`); Requires K8s 1.15+ |
+| pods.namespaceSelector | object | `{}` | Namespace selector for secrets (overrides `objectSelector`); Requires K8s 1.15+ |
+| configMaps.objectSelector | object | `{}` | Object selector for secrets (overrides `objectSelector`); Requires K8s 1.15+ |
+| configMaps.namespaceSelector | object | `{}` | Namespace selector for secrets (overrides `objectSelector`); Requires K8s 1.15+ |
+| customResources.objectSelector | object | `{}` | Object selector for secrets (overrides `objectSelector`); Requires K8s 1.15+ |
+| customResources.namespaceSelector | object | `{}` | Namespace selector for secrets (overrides `objectSelector`); Requires K8s 1.15+ |
 | podDisruptionBudget.enabled | bool | `true` | Enables PodDisruptionBudget |
 | podDisruptionBudget.minAvailable | int | `1` | Represents the number of Pods that must be available (integer or percentage) |
 | timeoutSeconds | bool | `false` | Webhook timeoutSeconds value |
 | hostNetwork | bool | `false` | Allow pod to use the node network namespace |
-| dnsPolicy | string | `""` | then pods with webhooks must set the dnsPolicy to "ClusterFirstWithHostNet" |
+| dnsPolicy | string | `""` | The dns policy desired for the deployment. If you're using cilium (CNI) and you are required to set hostNetwork to true, then pods with webhooks must set the dnsPolicy to "ClusterFirstWithHostNet" |
 | kubeVersion | string | `""` | Override cluster version |
 
 ### Certificate options

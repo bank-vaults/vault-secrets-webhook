@@ -20,12 +20,12 @@ certificate:
   server:
     tls:
       # -- Base64 encoded TLS certificate signed by the CA
-      crt:
+      crt: ""
       # -- Base64 encoded private key of TLS certificate signed by the CA
-      key:
+      key: ""
   ca:
     # -- Base64 encoded CA certificate
-    crt:
+    crt: ""
   # -- Use extra names if you want to use the webhook via an ingress or a loadbalancer
   extraAltNames: []
   # -- The number of days from the creation of the CA certificate until it expires
@@ -65,7 +65,7 @@ ingress:
 
 webhookClientConfig:
   # -- By default the mutating webhook uses the service of the webhook directly to contact webhook.
-  # -- Use url if webhook should be contacted over loadbalancer or ingress instead of service object.
+  # Use url if webhook should be contacted over loadbalancer or ingress instead of service object.
   useUrl: false
   # -- Set the url how the webhook should be contacted (including protocol https://)
   url: https://example.com
@@ -77,32 +77,31 @@ vaultEnv:
   tag: "v1.21.1"
 
 env:
-  # -- Vault image
-  VAULT_IMAGE: hashicorp/vault:1.14.1
+  ## -- Vault image
+  # VAULT_IMAGE: hashicorp/vault:1.14.1
   # VAULT_CAPATH: /vault/tls
 
-  # -- Used when the pod that should get secret injected does not specify an imagePullSecret
-  DEFAULT_IMAGE_PULL_SECRET: ""
-  # -- Used when the pod that should get secret injected does not specify an imagePullSecret
-  DEFAULT_IMAGE_PULL_SECRET_NAMESPACE: ""
-  # -- Used when the pod that should get secret injected does not specify an imagePullSecret
-  DEFAULT_IMAGE_PULL_SECRET_SERVICE_ACCOUNT: ""
+  ## -- Used when the pod that should get secret injected does not specify an imagePullSecret
+  # DEFAULT_IMAGE_PULL_SECRET: ""
+  # DEFAULT_IMAGE_PULL_SECRET_NAMESPACE: ""
+  # DEFAULT_IMAGE_PULL_SECRET_SERVICE_ACCOUNT: ""
 
-  # -- Define the webhook's timeout for Vault communication, if not defined individually in resources by annotations
-  VAULT_CLIENT_TIMEOUT: "10s"
-  # -- Define the webhook's role in Vault used for authentication, if not defined individually in resources by annotations
-  VAULT_ROLE: ""
+  ## -- Define the webhook's timeout for Vault communication, if not defined individually in resources by annotations
+  # VAULT_CLIENT_TIMEOUT: "10s"
 
-  # -- Cpu requests for init-containers vault-env and copy-vault-env
-  VAULT_ENV_CPU_REQUEST: "50m"
-  # -- Cpu limits for init-containers vault-env and copy-vault-env
-  VAULT_ENV_CPU_LIMIT: "250m"
-  # -- Memory requests for init-containers vault-env and copy-vault-env
-  VAULT_ENV_MEMORY_REQUEST: "64Mi"
-  # -- Memory limits for init-containers vault-env and copy-vault-env
-  VAULT_ENV_MEMORY_LIMIT: "64Mi"
-  # -- Define remote log server for vault-env
-  VAULT_ENV_LOG_SERVER: ""
+  ## -- Define the webhook's role in Vault used for authentication, if not defined individually in resources by annotations
+  # VAULT_ROLE: ""
+
+  ## -- Cpu requests and limits for init-containers vault-env and copy-vault-env
+  # VAULT_ENV_CPU_REQUEST: ""
+  # VAULT_ENV_CPU_LIMIT: ""
+
+  ## -- Memory requests and limits for init-containers vault-env and copy-vault-env
+  # VAULT_ENV_MEMORY_REQUEST: ""
+  # VAULT_ENV_MEMORY_LIMIT: ""
+
+  ## -- Define remote log server for vault-env
+  # VAULT_ENV_LOG_SERVER: ""
 
 # -- Containers to run before the app containers are started
 initContainers: []
@@ -124,9 +123,10 @@ metrics:
       # -- Skip TLS check for service monitor
       insecureSkipVerify: true
 
-# -- Container security context for webhook deployment
 securityContext:
+  # -- Run containers in webhook deployment as specified user
   runAsUser: 65534
+  # -- Allow process to gain more privileges than its parent process
   allowPrivilegeEscalation: false
 
 # -- Pod security context for webhook deployment
@@ -182,10 +182,10 @@ serviceAccount:
   # -- Labels to add to the service account
   labels: {}
   # -- Annotations to add to the service account.
-  # -- To enable GKE workload identity, use for example `iam.gke.io/gcp-service-account: gsa@project.iam.gserviceaccount.com`.
+  # To enable GKE workload identity, use for example `iam.gke.io/gcp-service-account: gsa@project.iam.gserviceaccount.com`.
   annotations: {}
   # -- The name of the service account to use.
-  # -- If not set and create is true, a name is generated using the fullname template
+  # If not set and create is true, a name is generated using the fullname template
   name: ""
 
 deployment:
@@ -214,6 +214,7 @@ apiSideEffectValue: NoneOnDryRun
 
 # -- Namespace selector to use, will limit webhook scope
 namespaceSelector:
+  # @ignored
   matchExpressions:
     # https://kubernetes.io/docs/reference/labels-annotations-taints/#kubernetes-io-metadata-name
     - key: kubernetes.io/metadata.name
@@ -233,24 +234,28 @@ objectSelector: {}
   # matchLabels:
   #   vault-injection: enabled
 
-# -- Object and namespace selector for secrets (overrides `objectSelector`); Requires K8s 1.15+
 secrets:
+  # -- Object selector for secrets (overrides `objectSelector`); Requires K8s 1.15+
   objectSelector: {}
+  # -- Namespace selector for secrets (overrides `objectSelector`); Requires K8s 1.15+
   namespaceSelector: {}
 
-# -- Object and namespace selector for pods (overrides `objectSelector`); Requires K8s 1.15+
 pods:
+  # -- Object selector for secrets (overrides `objectSelector`); Requires K8s 1.15+
   objectSelector: {}
+  # -- Namespace selector for secrets (overrides `objectSelector`); Requires K8s 1.15+
   namespaceSelector: {}
 
-# -- Object and namespace selector for configmaps (overrides `objectSelector`); Requires K8s 1.15+
 configMaps:
+  # -- Object selector for secrets (overrides `objectSelector`); Requires K8s 1.15+
   objectSelector: {}
+  # -- Namespace selector for secrets (overrides `objectSelector`); Requires K8s 1.15+
   namespaceSelector: {}
 
-# -- Object and namespace selector for custom resources (overrides `objectSelector`); Requires K8s 1.15+
 customResources:
+  # -- Object selector for secrets (overrides `objectSelector`); Requires K8s 1.15+
   objectSelector: {}
+  # -- Namespace selector for secrets (overrides `objectSelector`); Requires K8s 1.15+
   namespaceSelector: {}
 
 podDisruptionBudget:
@@ -268,8 +273,8 @@ timeoutSeconds: false
 hostNetwork: false
 
 # -- The dns policy desired for the deployment.
-# -- If you're using cilium (CNI) and you are required to set hostNetwork to true,
-# -- then pods with webhooks must set the dnsPolicy to "ClusterFirstWithHostNet"
+# If you're using cilium (CNI) and you are required to set hostNetwork to true,
+# then pods with webhooks must set the dnsPolicy to "ClusterFirstWithHostNet"
 dnsPolicy: ""
 
 # -- Override cluster version
