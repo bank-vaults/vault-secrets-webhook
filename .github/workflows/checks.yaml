@@ -16,4 +16,3 @@ jobs:
         uses: Morishiri/block-merge-commits-action@v1.0.1
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-
