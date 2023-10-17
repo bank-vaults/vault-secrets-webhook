@@ -3,11 +3,10 @@
 # Declare variables to be passed into your templates.
 
 
-
 # -- Number of replicas
 replicaCount: 2
 
-# -- Debug logs for webhook
+# -- Enable debug logs for webhook
 debug: false
 
 certificate:
@@ -34,13 +33,13 @@ certificate:
   certLifespan: 365
 
 image:
-  # -- Image repo that contains the admission server
+  # -- Container image repo that contains the admission server
   repository: ghcr.io/bank-vaults/vault-secrets-webhook
-  # -- Image tag
+  # -- Container image tag
   tag: ""
-  # -- Image pull policy
+  # -- Container image pull policy
   pullPolicy: IfNotPresent
-  # -- Image pull secrets for private repositories
+  # -- Container image pull secrets for private repositories
   imagePullSecrets: []
 
 service:
@@ -56,7 +55,7 @@ service:
   annotations: {}
 
 ingress:
-  # -- Webhook ingress enabled
+  # -- Enable Webhook ingress
   enabled: false
   # -- Webhook ingress annotations
   annotations: {}
@@ -64,19 +63,20 @@ ingress:
   host: ""
 
 webhookClientConfig:
-  # -- By default the mutating webhook uses the service of the webhook directly to contact webhook.
-  # Use url if webhook should be contacted over loadbalancer or ingress instead of service object.
+  # -- Use url if webhook should be contacted over loadbalancer or ingress instead of service object.
+  # By default, the mutating webhook uses the service of the webhook directly to contact webhook.
   useUrl: false
-  # -- Set the url how the webhook should be contacted (including protocol https://)
+  # -- Set the url how the webhook should be contacted, including the protocol
   url: https://example.com
 
 vaultEnv:
-  # -- Image repo for the vault-env container
+  # -- Container image repo that contains the vault-env container
   repository: ghcr.io/bank-vaults/vault-env
-  # -- Image tag for the vault-env container
+  # -- Container image tag for the vault-env container
   tag: "v1.21.1"
 
-env:
+# -- Custom environment variables available to webhook
+env: {}
   ## -- Vault image
   # VAULT_IMAGE: hashicorp/vault:1.14.1
   # VAULT_CAPATH: /vault/tls
@@ -103,16 +103,16 @@ env:
   ## -- Define remote log server for vault-env
   # VAULT_ENV_LOG_SERVER: ""
 
-# -- Containers to run before the app containers are started
+# -- Containers to run before the webhook containers are started
 initContainers: []
   # - name: init-myservice
   #   image: busybox
   #   command: ['sh', '-c', 'until nslookup myservice; do echo waiting for myservice; sleep 2; done;']
 
 metrics:
-  # -- Enable metrics
+  # -- Enable metrics service for the webhook
   enabled: false
-  # -- Metrics endpoint
+  # -- Metrics service port
   port: 8443
   serviceMonitor:
     # -- Enable service monitor
@@ -120,7 +120,7 @@ metrics:
     # -- Service monitor scheme
     scheme: https
     tlsConfig:
-      # -- Skip TLS check for service monitor
+      # -- Skip TLS checks for service monitor
       insecureSkipVerify: true
 
 securityContext:
@@ -132,40 +132,45 @@ securityContext:
 # -- Pod security context for webhook deployment
 podSecurityContext: {}
 
-# -- Extra volume definitions
+# -- Extra volume definitions for webhook deployment
 volumes: []
-# - name: vault-tls
-#   secret:
-#     secretName: vault-tls
+  # - name: vault-tls
+  #   secret:
+  #     secretName: vault-tls
 
-# -- Extra volume mounts
+# -- Extra volume mounts for webhook deployment
 volumeMounts: []
-# - name: vault-tls
-#   mountPath: /vault/tls
+  # - name: vault-tls
+  #   mountPath: /vault/tls
 
 # -- Extra annotations to add to pod metadata
 podAnnotations: {}
 
 # -- Extra labels to add to the deployment and pods
 labels: {}
-  #  team: banzai
+  # team: banzai
 
-# -- Resources to request
+# -- Resources to request for the deployment and pods
 resources: {}
 
-# -- Node selector to use
+# -- Node labels for pod assignment.
+# Check: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector
 nodeSelector: {}
 
-# -- Tolerations to add
+# -- List of node tolerations for the pods.
+# Check: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
 tolerations: []
 
-# -- Affinities to use
+# Node affinity settings for the pods.
+# Check: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/
 affinity: {}
 
-# -- TopologySpreadConstraints to add
+# -- TopologySpreadConstraints to add for the pods.
+# Check: https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/
 topologySpreadConstraints: {}
 
-# -- Assign a PriorityClassName to pods if set
+# -- Assign a PriorityClassName to pods if set.
+# Check: https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/
 priorityClassName: ""
 
 rbac:
@@ -173,20 +178,20 @@ rbac:
     # -- Use pod security policy
     enabled: false
   authDelegatorRole:
-    # -- Bind `system:auth-delegator` to the ServiceAccount
+    # -- Bind `system:auth-delegator` ClusterRoleBinding to given `serviceAccount`
     enabled: false
 
 serviceAccount:
   # -- Specifies whether a service account should be created
   create: true
+  # -- The name of the service account to use.
+  # If not set and `create` is true, a name is generated using the fullname template.
+  name: ""
   # -- Labels to add to the service account
   labels: {}
   # -- Annotations to add to the service account.
-  # To enable GKE workload identity, use for example `iam.gke.io/gcp-service-account: gsa@project.iam.gserviceaccount.com`.
+  # For example, use `iam.gke.io/gcp-service-account: gsa@project.iam.gserviceaccount.com` to enable GKE workload identity.
   annotations: {}
-  # -- The name of the service account to use.
-  # If not set and create is true, a name is generated using the fullname template
-  name: ""
 
 deployment:
   # -- Rolling strategy for webhook deployment
@@ -197,10 +202,12 @@ customResourceMutations: []
 
 customResourcesFailurePolicy: Ignore
 
-# -- Enable injecting values from Vault to ConfigMaps. This can cause issues when used with Helm, so it is disabled by default.
+# -- Enable injecting values from Vault to ConfigMaps. 
+# This can cause issues when used with Helm, so it is disabled by default.
 configMapMutation: false
 
-# -- Enable injecting values from Vault to Secrets. Set to `false` in order to prevent secret values from being persisted in Kubernetes.
+# -- Enable injecting values from Vault to Secrets.
+# Set to `false` in order to prevent secret values from being persisted in Kubernetes.
 secretsMutation: true
 
 configMapFailurePolicy: Ignore
@@ -210,9 +217,10 @@ podsFailurePolicy: Ignore
 secretsFailurePolicy: Ignore
 
 # -- Webhook sideEffect value
+# Check: https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#side-effects
 apiSideEffectValue: NoneOnDryRun
 
-# -- Namespace selector to use, will limit webhook scope
+# -- Namespace selector to use, will limit webhook scope (K8s version 1.15+)
 namespaceSelector:
   # @ignored
   matchExpressions:
