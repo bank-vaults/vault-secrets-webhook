@@ -870,17 +870,6 @@ func getBaseSecurityContext(podSecurityContext *corev1.PodSecurityContext, vault
 		context.RunAsUser = podSecurityContext.RunAsUser
 	}
 
-	// If we are using an agent, add required capabilities
-	if vaultConfig.UseAgent || vaultConfig.CtConfigMap != "" {
-		context.Capabilities.Add = []corev1.Capability{
-			"CHOWN",
-			"SETFCAP",
-			"SETGID",
-			"SETPCAP",
-			"SETUID",
-		}
-	}
-
 	// Although it could explicitly be set to false,
 	// the behavior of false and unset are the same
 	if vaultConfig.RunAsNonRoot {
