@@ -859,13 +859,7 @@ func getBaseSecurityContext(podSecurityContext *corev1.PodSecurityContext, vault
 		AllowPrivilegeEscalation: &vaultConfig.PspAllowPrivilegeEscalation,
 		ReadOnlyRootFilesystem:   &vaultConfig.ReadOnlyRootFilesystem,
 		Capabilities: &corev1.Capabilities{
-			Add: []corev1.Capability{
-				"CHOWN",
-				"SETFCAP",
-				"SETGID",
-				"SETPCAP",
-				"SETUID",
-			},
+			Add: []corev1.Capability{},
 			Drop: []corev1.Capability{
 				"ALL",
 			},
@@ -874,6 +868,17 @@ func getBaseSecurityContext(podSecurityContext *corev1.PodSecurityContext, vault
 
 	if podSecurityContext != nil && podSecurityContext.RunAsUser != nil {
 		context.RunAsUser = podSecurityContext.RunAsUser
+	}
+
+	// If we are using an agent, add required capabilities
+	if vaultConfig.UseAgent || vaultConfig.CtConfigMap != "" {
+		context.Capabilities.Add = []corev1.Capability{
+			"CHOWN",
+			"SETFCAP",
+			"SETGID",
+			"SETPCAP",
+			"SETUID",
+		}
 	}
 
 	// Although it could explicitly be set to false,
