@@ -4,13 +4,8 @@ A Kubernetes mutating webhook that makes direct secret injection into Pods possi
 
 **Homepage:** <https://bank-vaults.dev>
 
-This chart will install a mutating admission webhook, that injects an executable to containers in Pods which than can request secrets from Vault through environment variable definitions. Also, it can inject statically into ConfigMaps, Secrets, and CustomResources.
-
-## Before you start
-
-Before you install this chart you must create a namespace for it, this is due to the order in which the resources in the charts are applied (Helm collects all of the resources in a given Chart and it's dependencies, groups them by resource type, and then installs them in a predefined order (see [here](https://github.com/helm/helm/blob/release-2.10/pkg/tiller/kind_sorter.go#L29) - Helm 2.10).
-
-The `MutatingWebhookConfiguration` gets created before the actual backend Pod which serves as the webhook itself, Kubernetes would like to mutate that pod as well, but it is not ready to mutate yet (infinite recursion in logic).
+This chart will install a mutating admission webhook, that injects an executable to containers in Pods which than can request secrets from Vault through environment variable definitions.
+It can also inject statically into ConfigMaps, Secrets, and CustomResources.
 
 ## Using External Vault Instances
 
@@ -23,10 +18,10 @@ vault.security.banzaicloud.io/vault-role: [Auth role]
 vault.security.banzaicloud.io/vault-skip-verify: "true" # Container is missing Trusted Mozilla roots too.
 ```
 
-Be mindful how you reference Vault secrets itself. For KV v2 secrets, you will need to add the /data/ to the path of the secret.
+Be mindful how you reference Vault secrets itself. For KV v2 secrets, you will need to add the `/data/` to the path of the secret.
 
 ```
-PS C:\> vault kv get kv/rax/test
+$ vault kv get kv/rax/test
 ====== Metadata ======
 Key              Value
 ---              -----
@@ -45,7 +40,7 @@ MYSQL_ROOT_PASSWORD    s3cr3t
 The secret shown above is referenced like this:
 
 ```
-vault:[ENGINE]/data/[SECRET_NAME]#KEY
+vault:[ENGINE]/data/[SECRET_NAME]#[KEY]
 vault:kv/rax/data/test#MYSQL_PASSWORD
 ```
 
@@ -57,11 +52,15 @@ Omitting the version will tell Vault to pull the latest version.
 
 ## Installing the Chart
 
-**Prepare Kubernetes namespace**
+Before you install this chart you must create a namespace for it. This is due to the order in which the resources in the charts are applied (Helm collects all of the resources in a given Chart and its dependencies, groups them by resource type, and then installs them in a predefined order (see [here](https://github.com/helm/helm/blob/3547a4b5bf5edb5478ce352e18858d8a552a4110/pkg/releaseutil/kind_sorter.go#L31)).
+The `MutatingWebhookConfiguration` gets created before the actual backend Pod which serves as the webhook itself, Kubernetes would like to mutate that pod as well, but it is not ready to mutate yet (infinite recursion in logic).
 
-In case of the K8s version is lower than 1.15 the namespace where you install the webhook must have a label of `name` with the namespace name as the label value, so the `namespaceSelector` in the `MutatingWebhookConfiguration` can skip the namespace of the webhook, so no self-mutation takes place. If the K8s version is 1.15 at least, the default `objectSelector` will prevent the self-mutation (you don't have to configure anything) and you are free to install to any namespace of your choice.
+### Prepare Kubernetes namespace
 
-_You have to do this only in case you are using Helm < 3.2 and Kubernetes < 1.15_.
+In case of the K8s version is lower than 1.15 the namespace where you install the webhook must have a label of `name` with the namespace name as the label value, so the `namespaceSelector` in the `MutatingWebhookConfiguration` can skip the namespace of the webhook, so no self-mutation takes place.
+If the K8s version is 1.15 at least, the default `objectSelector` will prevent the self-mutation (you don't have to configure anything) and you are free to install to any namespace of your choice.
+
+**You have to do this only in case you are using Helm < 3.2 and Kubernetes < 1.15.**
 
 ```bash
 WEBHOOK_NS=${WEBHOOK_NS:-vswh}
@@ -69,13 +68,11 @@ kubectl create namespace "${WEBHOOK_NS}"
 kubectl label namespace "${WEBHOOK_NS}" name="${WEBHOOK_NS}"
 ```
 
-**Install the chart**
+### Install the chart
 
 ```bash
-$ helm upgrade --namespace vswh --install vswh oci://ghcr.io/bank-vaults/helm-charts/vault-secrets-webhook --create-namespace
+$ helm install vswh --namespace vswh --wait oci://ghcr.io/bank-vaults/helm-charts/vault-secrets-webhook --create-namespace
 ```
-
-**NOTE**: `--wait` is sometimes necessary because of some Helm timing issues, please see [this issue](https://github.com/banzaicloud/banzai-charts/issues/888).
 
 ### Openshift 4.3
 
@@ -143,7 +140,7 @@ The following table lists the configurable parameters of the Helm chart.
 | `resources` | object | `{}` | Resources to request for the deployment and pods |
 | `nodeSelector` | object | `{}` | Node labels for pod assignment. Check: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector |
 | `tolerations` | list | `[]` | List of node tolerations for the pods. Check: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/ |
-| `affinity` | object | `{}` |  |
+| `affinity` | object | `{}` | Node affinity settings for the pods. Check: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/ |
 | `topologySpreadConstraints` | object | `{}` | TopologySpreadConstraints to add for the pods. Check: https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/ |
 | `priorityClassName` | string | `""` | Assign a PriorityClassName to pods if set. Check: https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/ |
 | `rbac.psp.enabled` | bool | `false` | Use pod security policy |
@@ -155,7 +152,7 @@ The following table lists the configurable parameters of the Helm chart.
 | `deployment.strategy` | object | `{}` | Rolling strategy for webhook deployment |
 | `customResourceMutations` | list | `[]` | List of CustomResources to inject values from Vault, for example: ["ingresses", "servicemonitors"] |
 | `customResourcesFailurePolicy` | string | `"Ignore"` |  |
-| `configMapMutation` | bool | `false` | Enable injecting values from Vault to ConfigMaps.  This can cause issues when used with Helm, so it is disabled by default. |
+| `configMapMutation` | bool | `false` | Enable injecting values from Vault to ConfigMaps. This can cause issues when used with Helm, so it is disabled by default. |
 | `secretsMutation` | bool | `true` | Enable injecting values from Vault to Secrets. Set to `false` in order to prevent secret values from being persisted in Kubernetes. |
 | `configMapFailurePolicy` | string | `"Ignore"` |  |
 | `podsFailurePolicy` | string | `"Ignore"` |  |
@@ -182,7 +179,7 @@ Specify each parameter using the `--set key=value[,key=value]` argument to `helm
 
 ### Certificate options
 
-There are the following options for suppling the webhook with CA and TLS certificates.
+There are the following options for supplying the webhook with CA and TLS certificates.
 
 #### Generate (default)
 

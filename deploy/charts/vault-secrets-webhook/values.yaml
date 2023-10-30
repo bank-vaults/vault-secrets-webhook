@@ -161,7 +161,7 @@ nodeSelector: {}
 # Check: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
 tolerations: []
 
-# Node affinity settings for the pods.
+# -- Node affinity settings for the pods.
 # Check: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/
 affinity: {}
 
@@ -202,7 +202,7 @@ customResourceMutations: []
 
 customResourcesFailurePolicy: Ignore
 
-# -- Enable injecting values from Vault to ConfigMaps. 
+# -- Enable injecting values from Vault to ConfigMaps.
 # This can cause issues when used with Helm, so it is disabled by default.
 configMapMutation: false
 
