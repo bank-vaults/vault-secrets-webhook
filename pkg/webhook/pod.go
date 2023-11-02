@@ -751,7 +751,7 @@ func getContainers(podSecurityContext *corev1.PodSecurityContext, vaultConfig Va
 
 	containerVolMounts = append(containerVolMounts, corev1.VolumeMount{
 		Name:      "ct-secrets",
-		MountPath: "/vault/secrets",
+		MountPath: vaultConfig.ConfigfilePath,
 	}, corev1.VolumeMount{
 		Name:      VaultEnvVolumeName,
 		MountPath: "/home/consul-template",
@@ -810,7 +810,7 @@ func getAgentContainers(originalContainers []corev1.Container, podSecurityContex
 
 	containerVolMounts = append(containerVolMounts, serviceAccountMount, corev1.VolumeMount{
 		Name:      "agent-secrets",
-		MountPath: "/vault/secrets",
+		MountPath: vaultConfig.ConfigfilePath,
 	}, corev1.VolumeMount{
 		Name:      "agent-configmap",
 		MountPath: "/vault/config/config.hcl",
