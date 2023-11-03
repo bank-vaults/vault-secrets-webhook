@@ -35,7 +35,8 @@ spec:
     name: {{ include "vault-secrets-webhook.selfSignedIssuer" . }}
   commonName: "ca.vault-secrets-webhook.cert-manager"
   isCA: true
-
+  privateKey:
+    rotationPolicy: Always
 ---
 
 # Create an Issuer that uses the above generated CA certificate to issue certs
@@ -80,5 +81,6 @@ spec:
   {{- range .Values.certificate.extraAltNames }}
   - {{ . }}
   {{- end }}
-
+  privateKey:
+    rotationPolicy: Always
 {{- end }}
