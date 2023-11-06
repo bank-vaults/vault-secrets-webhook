@@ -1,12 +1,11 @@
-# Vault Secrets webhook
+# vault-secrets-webhook
 
-This chart will install a mutating admission webhook, that injects an executable to containers in Pods which than can request secrets from Vault through environment variable definitions. Also, it can inject statically into ConfigMaps, Secrets, and CustomResources.
+A Kubernetes mutating webhook that makes direct secret injection into Pods possible
 
-## Before you start
+**Homepage:** <https://bank-vaults.dev>
 
-Before you install this chart you must create a namespace for it, this is due to the order in which the resources in the charts are applied (Helm collects all of the resources in a given Chart and it's dependencies, groups them by resource type, and then installs them in a predefined order (see [here](https://github.com/helm/helm/blob/release-2.10/pkg/tiller/kind_sorter.go#L29) - Helm 2.10).
-
-The `MutatingWebhookConfiguration` gets created before the actual backend Pod which serves as the webhook itself, Kubernetes would like to mutate that pod as well, but it is not ready to mutate yet (infinite recursion in logic).
+This chart will install a mutating admission webhook, that injects an executable to containers in Pods which than can request secrets from Vault through environment variable definitions.
+It can also inject statically into ConfigMaps, Secrets, and CustomResources.
 
 ## Using External Vault Instances
 
@@ -19,10 +18,10 @@ vault.security.banzaicloud.io/vault-role: [Auth role]
 vault.security.banzaicloud.io/vault-skip-verify: "true" # Container is missing Trusted Mozilla roots too.
 ```
 
-Be mindful how you reference Vault secrets itself. For KV v2 secrets, you will need to add the /data/ to the path of the secret.
+Be mindful how you reference Vault secrets itself. For KV v2 secrets, you will need to add the `/data/` to the path of the secret.
 
 ```
-PS C:\> vault kv get kv/rax/test
+$ vault kv get kv/rax/test
 ====== Metadata ======
 Key              Value
 ---              -----
@@ -41,7 +40,7 @@ MYSQL_ROOT_PASSWORD    s3cr3t
 The secret shown above is referenced like this:
 
 ```
-vault:[ENGINE]/data/[SECRET_NAME]#KEY
+vault:[ENGINE]/data/[SECRET_NAME]#[KEY]
 vault:kv/rax/data/test#MYSQL_PASSWORD
 ```
 
@@ -53,32 +52,34 @@ Omitting the version will tell Vault to pull the latest version.
 
 ## Installing the Chart
 
-**In case of the K8s version is lower than 1.15 the namespace where you install the webhook must have a label of `name` with the namespace name as the label value, so the `namespaceSelector` in the `MutatingWebhookConfiguration` can skip the namespace of the webhook, so no self-mutation takes place. If the K8s version is 1.15 at least, the default `objectSelector` will prevent the self-mutation (you don't have to configure anything) and you are free to install to any namespace of your choice.**.
+Before you install this chart you must create a namespace for it. This is due to the order in which the resources in the charts are applied (Helm collects all of the resources in a given Chart and its dependencies, groups them by resource type, and then installs them in a predefined order (see [here](https://github.com/helm/helm/blob/3547a4b5bf5edb5478ce352e18858d8a552a4110/pkg/releaseutil/kind_sorter.go#L31)).
+The `MutatingWebhookConfiguration` gets created before the actual backend Pod which serves as the webhook itself, Kubernetes would like to mutate that pod as well, but it is not ready to mutate yet (infinite recursion in logic).
 
+### Prepare Kubernetes namespace
+
+In case of the K8s version is lower than 1.15 the namespace where you install the webhook must have a label of `name` with the namespace name as the label value, so the `namespaceSelector` in the `MutatingWebhookConfiguration` can skip the namespace of the webhook, so no self-mutation takes place.
+If the K8s version is 1.15 at least, the default `objectSelector` will prevent the self-mutation (you don't have to configure anything) and you are free to install to any namespace of your choice.
+
+**You have to do this only in case you are using Helm < 3.2 and Kubernetes < 1.15.**
 
 ```bash
-# You have to do this only in case you are not using Helm 3.2 or later and Kubernetes 1.15 or later.
 WEBHOOK_NS=${WEBHOOK_NS:-vswh}
 kubectl create namespace "${WEBHOOK_NS}"
-kubectl label ns "${WEBHOOK_NS}" name="${WEBHOOK_NS}"
+kubectl label namespace "${WEBHOOK_NS}" name="${WEBHOOK_NS}"
 ```
+
+### Install the chart
 
 ```bash
-$ helm repo add banzaicloud-stable https://kubernetes-charts.banzaicloud.com/
-$ helm repo update
+$ helm install vswh --namespace vswh --wait oci://ghcr.io/bank-vaults/helm-charts/vault-secrets-webhook --create-namespace
 ```
-
-```bash
-$ helm upgrade --namespace vswh --install vswh banzaicloud-stable/vault-secrets-webhook --create-namespace
-```
-
-**NOTE**: `--wait` is sometimes necessary because of some Helm timing issues, please see [this issue](https://github.com/banzaicloud/banzai-charts/issues/888).
 
 ### Openshift 4.3
-For security reasons, the `runAsUser` must be in the range between 1000570000 and 1000579999. By setting the value of `securityContext.runAsUser` to "", OpenShift chooses a valid User.
+
+For security reasons, the `runAsUser` must be in the range between 1000570000 and 1000579999. By setting the value of `securityContext.runAsUser` to `""`, OpenShift chooses a valid User.
 
 ```bash
-$ helm upgrade --namespace vswh --install vswh banzaicloud-stable/vault-secrets-webhook --set-string securityContext.runAsUser="" --create-namespace
+$ helm upgrade --namespace vswh --install vswh oci://ghcr.io/bank-vaults/helm-charts/vault-secrets-webhook --set-string securityContext.runAsUser="" --create-namespace
 ```
 
 ### About GKE Private Clusters
@@ -89,77 +90,96 @@ The auto-generated rules **only** open ports 10250 and 443 between masters and n
 
 You can read more information on how to add firewall rules for the GKE control plane nodes in the [GKE docs](https://cloud.google.com/kubernetes-engine/docs/how-to/private-clusters#add_firewall_rules).
 
-## Configuration
+## Values
 
-The following tables lists configurable parameters of the vault-secrets-webhook chart and their default values:
+The following table lists the configurable parameters of the Helm chart.
 
-| Parameter                          | Description                                                                   | Default                                                  |
-|------------------------------------|-------------------------------------------------------------------------------|----------------------------------------------------------|
-| affinity                           | affinities to use                                                             | `{}`                                                     |
-| debug                              | debug logs for webhook                                                        | `false`                                                  |
-| image.pullPolicy                   | image pull policy                                                             | `IfNotPresent`                                           |
-| image.repository                   | image repo that contains the admission server                                 | `ghcr.io/bank-vaults/vault-secrets-webhook`              |
-| image.tag                          | image tag                                                                     | `.Chart.AppVersion`                                      |
-| image.imagePullSecrets             | image pull secrets for private repositories                                   | `[]`                                                     |
-| vaultEnv.repository                | image repo that contains the vault-env container                              | `ghcr.io/bank-vaults/vault-env`                          |
-| vaultEnv.tag                       | image tag for the vault-env container                                         | `v1.21.1`                                                |
-| namespaceSelector                  | namespace selector to use, will limit webhook scope                           | `{}`                                                     |
-| objectSelector                     | object selector to use, will limit webhook scope (K8s version 1.15+)          | `{}`                                                     |
-| nodeSelector                       | node selector to use                                                          | `{}`                                                     |
-| labels                             | extra labels to add to the deployment and pods                                | `{}`                                                     |
-| podAnnotations                     | extra annotations to add to pod metadata                                      | `{}`                                                     |
-| replicaCount                       | number of replicas                                                            | `2`                                                      |
-| resources                          | resources to request                                                          | `{}`                                                     |
-| service.externalPort               | webhook service external port                                                 | `443`                                                    |
-| service.name                       | webhook service name                                                          | `vault-secrets-webhook`                                  |
-| service.type                       | webhook service type                                                          | `ClusterIP`                                              |
-| tolerations                        | tolerations to add                                                            | `[]`                                                     |
-| topologySpreadConstraints          | topologySpreadConstraints to add                                              | `{}`                                                     |
-| rbac.psp.enabled                   | use pod security policy                                                       | `false`                                                  |
-| rbac.authDelegatorRole.enabled     | bind `system:auth-delegator` to the ServiceAccount                            | `false`                                                  |
-| env.VAULT_IMAGE                    | vault image                                                                   | `hashicorp/vault:1.14.1`                                 |
-| env.VAULT_ENV_CPU_REQUEST          | cpu requests for init-containers vault-env and copy-vault-env                 | `50m`                                                    |
-| env.VAULT_ENV_MEMORY_REQUEST       | memory requests for init-containers vault-env and copy-vault-env              | `64Mi`                                                   |
-| env.VAULT_ENV_CPU_LIMIT            | cpu limits for init-containers vault-env and copy-vault-env                   | `250m`                                                   |
-| env.VAULT_ENV_MEMORY_LIMIT         | memory limits for init-containers vault-env and copy-vault-env                | `64Mi`                                                   |
-| env.VAULT_ENV_LOG_SERVER           | define remote log server for vault-env                                        | ``                                                       |
-| initContainers                     | containers, which are run before the app containers are started               | `[]`                                                     |
-| volumes                            | extra volume definitions                                                      | `[]`                                                     |
-| volumeMounts                       | extra volume mounts                                                           | `[]`                                                     |
-| configMapMutation                  | enable injecting values from Vault to ConfigMaps                              | `false`                                                  |
-| secretsMutation                    | enable injecting values from Vault to Secrets                                 | `true`                                                   |
-| deployment.strategy                | rolling strategy for webhook deployment                                       | `{}`                                                     |
-| pods.objectSelector                | object selector to use - ( overrides root ObjectSelector )                    | `{}`                                                     |
-| pods.namespaceSelector             | namespace selector to use - ( overrides root namespaceSelector )              | `{}`                                                     |
-| secrets.objectSelector             | object selector to use - ( overrides root ObjectSelector )                    | `{}`                                                     |
-| secrets.namespaceSelector          | namespace selector to use - ( overrides root namespaceSelector )              | `{}`                                                     |
-| configMaps.objectSelector          | object selector to use - ( overrides root ObjectSelector )                    | `{}`                                                     |
-| configMaps.namespaceSelector       | namespace selector to use - ( overrides root namespaceSelector )              | `{}`                                                     |
-| customResources.objectSelector     | object selector to use - ( overrides root ObjectSelector )                    | `{}`                                                     |
-| customResources.namespaceSelector  | namespace selector to use - ( overrides root namespaceSelector )              | `{}`                                                     |
-| customResourceMutations            | list of CustomResources to inject values from Vault                           | `[]`                                                     |
-| podDisruptionBudget.enabled        | enable PodDisruptionBudget                                                    | `true`                                                   |
-| podDisruptionBudget.minAvailable   | represents the number of Pods that must be available (integer or percentage)  | `1`                                                      |
-| podDisruptionBudget.maxUnavailable | represents the number of Pods that can be unavailable (integer or percentage) | ` `                                                      |
-| certificate.generate               | should a new CA and TLS certificate be generated for the webhook              | `true`                                                   |
-| certificate.caLifespan             | the number of days from the creation of the CA certificate until it expires   | `3650`                                                   |
-| certificate.certLifespan           | the number of days from the creation of the TLS certificate until it expires  | `365`                                                    |
-| certificate.useCertManager         | should request cert-manager for getting a new CA and TLS certificate          | `false`                                                  |
-| certificate.servingCertificate     | should use an already externally defined Certificate by cert-manager          | `null`                                                   |
-| certificate.ca.crt                 | Base64 encoded CA certificate                                                 | ``                                                       |
-| certificate.server.tls.crt         | Base64 encoded TLS certificate signed by the CA                               | ``                                                       |
-| certificate.server.tls.key         | Base64 encoded private key of TLS certificate signed by the CA                | ``                                                       |
-| apiSideEffectValue                 | Webhook sideEffect value                                                      | `NoneOnDryRun`                                           |
-| securityContext                    | Container security context for webhook deployment                             | `{ runAsUser: 65534, allowPrivaledgeEscalation: false }` |
-| podSecurityContext                 | Pod security context for webhook deployment                                   | `{}`                                                     |
-| timeoutSeconds                     | Webhook timeoutSeconds value                                                  | ``                                                       |
-| hostNetwork                        | allow pod to use the node network namespace                                   | `false`                                                  |
-| dnsPolicy                          | The dns policy desired for the deployment                                     | ``                                                       |
-| kubeVersion                        | Override cluster version                                                      | ``                                                       |
+| Parameter | Type | Default | Description |
+| --- | ---- | ------- | ----------- |
+| `replicaCount` | int | `2` | Number of replicas |
+| `debug` | bool | `false` | Enable debug logs for webhook |
+| `certificate.useCertManager` | bool | `false` | Should request cert-manager for getting a new CA and TLS certificate |
+| `certificate.servingCertificate` | string | `nil` | Should use an already externally defined Certificate by cert-manager |
+| `certificate.generate` | bool | `true` | Should a new CA and TLS certificate be generated for the webhook |
+| `certificate.server.tls.crt` | string | `""` | Base64 encoded TLS certificate signed by the CA |
+| `certificate.server.tls.key` | string | `""` | Base64 encoded private key of TLS certificate signed by the CA |
+| `certificate.ca.crt` | string | `""` | Base64 encoded CA certificate |
+| `certificate.extraAltNames` | list | `[]` | Use extra names if you want to use the webhook via an ingress or a loadbalancer |
+| `certificate.caLifespan` | int | `3650` | The number of days from the creation of the CA certificate until it expires |
+| `certificate.certLifespan` | int | `365` | The number of days from the creation of the TLS certificate until it expires |
+| `image.repository` | string | `"ghcr.io/bank-vaults/vault-secrets-webhook"` | Container image repo that contains the admission server |
+| `image.tag` | string | `""` | Container image tag |
+| `image.pullPolicy` | string | `"IfNotPresent"` | Container image pull policy |
+| `image.imagePullSecrets` | list | `[]` | Container image pull secrets for private repositories |
+| `service.name` | string | `"vault-secrets-webhook"` | Webhook service name |
+| `service.type` | string | `"ClusterIP"` | Webhook service type |
+| `service.externalPort` | int | `443` | Webhook service external port |
+| `service.internalPort` | int | `8443` | Webhook service internal port |
+| `service.annotations` | object | `{}` | Webhook service annotations, e.g. if type is AWS LoadBalancer and you want to add security groups |
+| `ingress.enabled` | bool | `false` | Enable Webhook ingress |
+| `ingress.annotations` | object | `{}` | Webhook ingress annotations |
+| `ingress.host` | string | `""` | Webhook ingress host |
+| `webhookClientConfig.useUrl` | bool | `false` | Use url if webhook should be contacted over loadbalancer or ingress instead of service object. By default, the mutating webhook uses the service of the webhook directly to contact webhook. |
+| `webhookClientConfig.url` | string | `"https://example.com"` | Set the url how the webhook should be contacted, including the protocol |
+| `vaultEnv.repository` | string | `"ghcr.io/bank-vaults/vault-env"` | Container image repo that contains the vault-env container |
+| `vaultEnv.tag` | string | `"v1.21.1"` | Container image tag for the vault-env container |
+| `env` | object | `{}` | Custom environment variables available to webhook |
+| `initContainers` | list | `[]` | Containers to run before the webhook containers are started |
+| `metrics.enabled` | bool | `false` | Enable metrics service for the webhook |
+| `metrics.port` | int | `8443` | Metrics service port |
+| `metrics.serviceMonitor.enabled` | bool | `false` | Enable service monitor |
+| `metrics.serviceMonitor.scheme` | string | `"https"` | Service monitor scheme |
+| `metrics.serviceMonitor.tlsConfig.insecureSkipVerify` | bool | `true` | Skip TLS checks for service monitor |
+| `securityContext.runAsUser` | int | `65534` | Run containers in webhook deployment as specified user |
+| `securityContext.allowPrivilegeEscalation` | bool | `false` | Allow process to gain more privileges than its parent process |
+| `podSecurityContext` | object | `{}` | Pod security context for webhook deployment |
+| `volumes` | list | `[]` | Extra volume definitions for webhook deployment |
+| `volumeMounts` | list | `[]` | Extra volume mounts for webhook deployment |
+| `podAnnotations` | object | `{}` | Extra annotations to add to pod metadata |
+| `labels` | object | `{}` | Extra labels to add to the deployment and pods |
+| `resources` | object | `{}` | Resources to request for the deployment and pods |
+| `nodeSelector` | object | `{}` | Node labels for pod assignment. Check: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector |
+| `tolerations` | list | `[]` | List of node tolerations for the pods. Check: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/ |
+| `affinity` | object | `{}` | Node affinity settings for the pods. Check: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/ |
+| `topologySpreadConstraints` | object | `{}` | TopologySpreadConstraints to add for the pods. Check: https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/ |
+| `priorityClassName` | string | `""` | Assign a PriorityClassName to pods if set. Check: https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/ |
+| `rbac.psp.enabled` | bool | `false` | Use pod security policy |
+| `rbac.authDelegatorRole.enabled` | bool | `false` | Bind `system:auth-delegator` ClusterRoleBinding to given `serviceAccount` |
+| `serviceAccount.create` | bool | `true` | Specifies whether a service account should be created |
+| `serviceAccount.name` | string | `""` | The name of the service account to use. If not set and `create` is true, a name is generated using the fullname template. |
+| `serviceAccount.labels` | object | `{}` | Labels to add to the service account |
+| `serviceAccount.annotations` | object | `{}` | Annotations to add to the service account. For example, use `iam.gke.io/gcp-service-account: gsa@project.iam.gserviceaccount.com` to enable GKE workload identity. |
+| `deployment.strategy` | object | `{}` | Rolling strategy for webhook deployment |
+| `customResourceMutations` | list | `[]` | List of CustomResources to inject values from Vault, for example: ["ingresses", "servicemonitors"] |
+| `customResourcesFailurePolicy` | string | `"Ignore"` |  |
+| `configMapMutation` | bool | `false` | Enable injecting values from Vault to ConfigMaps. This can cause issues when used with Helm, so it is disabled by default. |
+| `secretsMutation` | bool | `true` | Enable injecting values from Vault to Secrets. Set to `false` in order to prevent secret values from being persisted in Kubernetes. |
+| `configMapFailurePolicy` | string | `"Ignore"` |  |
+| `podsFailurePolicy` | string | `"Ignore"` |  |
+| `secretsFailurePolicy` | string | `"Ignore"` |  |
+| `apiSideEffectValue` | string | `"NoneOnDryRun"` | Webhook sideEffect value Check: https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#side-effects |
+| `namespaceSelector` | object | `{}` | Namespace selector to use, will limit webhook scope (K8s version 1.15+) |
+| `objectSelector` | object | `{}` | Object selector to use, will limit webhook scope (K8s version 1.15+) |
+| `secrets.objectSelector` | object | `{}` | Object selector for secrets (overrides `objectSelector`); Requires K8s 1.15+ |
+| `secrets.namespaceSelector` | object | `{}` | Namespace selector for secrets (overrides `objectSelector`); Requires K8s 1.15+ |
+| `pods.objectSelector` | object | `{}` | Object selector for secrets (overrides `objectSelector`); Requires K8s 1.15+ |
+| `pods.namespaceSelector` | object | `{}` | Namespace selector for secrets (overrides `objectSelector`); Requires K8s 1.15+ |
+| `configMaps.objectSelector` | object | `{}` | Object selector for secrets (overrides `objectSelector`); Requires K8s 1.15+ |
+| `configMaps.namespaceSelector` | object | `{}` | Namespace selector for secrets (overrides `objectSelector`); Requires K8s 1.15+ |
+| `customResources.objectSelector` | object | `{}` | Object selector for secrets (overrides `objectSelector`); Requires K8s 1.15+ |
+| `customResources.namespaceSelector` | object | `{}` | Namespace selector for secrets (overrides `objectSelector`); Requires K8s 1.15+ |
+| `podDisruptionBudget.enabled` | bool | `true` | Enables PodDisruptionBudget |
+| `podDisruptionBudget.minAvailable` | int | `1` | Represents the number of Pods that must be available (integer or percentage) |
+| `timeoutSeconds` | bool | `false` | Webhook timeoutSeconds value |
+| `hostNetwork` | bool | `false` | Allow pod to use the node network namespace |
+| `dnsPolicy` | string | `""` | The dns policy desired for the deployment. If you're using cilium (CNI) and you are required to set hostNetwork to true, then pods with webhooks must set the dnsPolicy to "ClusterFirstWithHostNet" |
+| `kubeVersion` | string | `""` | Override cluster version |
+
+Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`.
 
 ### Certificate options
 
-There are the following options for suppling the webhook with CA and TLS certificates.
+There are the following options for supplying the webhook with CA and TLS certificates.
 
 #### Generate (default)
 

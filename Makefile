@@ -106,7 +106,7 @@ generate: ## Run generation jobs
 
 .PHONY: generate-helm-docs
 generate-helm-docs:
-	helm-docs -s file -c charts/ -t README.md.gotmpl
+	helm-docs -s file -c deploy/charts/ -t README.md.gotmpl
 
 deps: bin/golangci-lint bin/licensei bin/kind bin/kurun bin/helm-docs
 deps: ## Install dependencies
