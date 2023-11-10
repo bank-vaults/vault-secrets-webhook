@@ -19,6 +19,12 @@ _Alternatively, install [Go](https://go.dev/dl/) on your computer then run `make
 
 Make sure Docker is installed with Compose and Buildx.
 
+Fetch required tools:
+
+```shell
+make deps
+```
+
 Run project dependencies:
 
 ```shell
@@ -35,8 +41,6 @@ Run the test suite:
 
 ```shell
 make test
-
-make container-image
 make test-e2e-local
 ```
 
@@ -58,13 +62,9 @@ Build artifacts locally:
 make artifacts
 ```
 
-Once you are done either stop or tear down dependencies:
+Once you are done, you can tear down project dependencies:
 
 ```shell
-make stop
-
-# OR
-
 make down
 ```
 
@@ -80,7 +80,6 @@ This is a good option if you want to run the test suite to make sure everything 
 You can run the test suite by running the following commands:
 
 ```shell
-make container-image
 make test-e2e-local
 ```
 

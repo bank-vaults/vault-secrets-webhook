@@ -4,33 +4,27 @@ export PATH := $(abspath bin/):${PATH}
 
 CONTAINER_IMAGE_REF = ghcr.io/bank-vaults/vault-secrets-webhook:dev
 
-# Dependency versions
-GOLANGCI_VERSION = 1.53.3
-LICENSEI_VERSION = 0.8.0
-KIND_VERSION = 0.20.0
-KURUN_VERSION = 0.7.0
-HELM_DOCS_VERSION = 1.11.0
+##@ General
+
+# Targets commented with ## will be visible in "make help" info.
+# Comments marked with ##@ will be used as categories for a group of targets.
+
+.PHONY: help
+default: help
+help: ## Display this help
+	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+
+##@ Development
 
 .PHONY: up
 up: ## Start development environment
-	kind create cluster
+	$(KIND_BIN) create cluster
 	docker compose up -d
-
-.PHONY: stop
-stop: ## Stop development environment
-	# TODO: consider using k3d instead
-	kind delete cluster
-	docker compose stop
 
 .PHONY: down
 down: ## Destroy development environment
-	kind delete cluster
+	$(KIND_BIN) delete cluster
 	docker compose down -v
-
-.PHONY: build
-build: ## Build binary
-	@mkdir -p build
-	go build -race -o build/webhook .
 
 .PHONY: run
 run: ## Run the operator locally talking to a Kubernetes cluster
@@ -40,12 +34,15 @@ run: ## Run the operator locally talking to a Kubernetes cluster
 forward: ## Install the webhook chart and kurun to port-forward the local webhook into Kubernetes
 	kubectl create namespace vault-infra --dry-run -o yaml | kubectl apply -f -
 	kubectl label namespaces vault-infra name=vault-infra --overwrite
-	helm upgrade --install vault-secrets-webhook deploy/charts/vault-secrets-webhook --namespace vault-infra --set replicaCount=0 --set podsFailurePolicy=Fail --set secretsFailurePolicy=Fail --set configMapMutation=true --set configMapFailurePolicy=Fail
-	kurun port-forward localhost:8443 --namespace vault-infra --servicename vault-secrets-webhook --tlssecret vault-secrets-webhook-webhook-tls
+	$(HELM_BIN) upgrade --install vault-secrets-webhook deploy/charts/vault-secrets-webhook --namespace vault-infra --set replicaCount=0 --set podsFailurePolicy=Fail --set secretsFailurePolicy=Fail --set configMapMutation=true --set configMapFailurePolicy=Fail
+	$(KURUN_BIN) port-forward localhost:8443 --namespace vault-infra --servicename vault-secrets-webhook --tlssecret vault-secrets-webhook-webhook-tls
 
-.PHONY: artifacts
-artifacts: container-image helm-chart
-artifacts: ## Build artifacts
+##@ Build
+
+.PHONY: build
+build: ## Build binary
+	@mkdir -p build
+	go build -race -o build/webhook .
 
 .PHONY: container-image
 container-image: ## Build container image
@@ -54,10 +51,16 @@ container-image: ## Build container image
 .PHONY: helm-chart
 helm-chart: ## Build Helm chart
 	@mkdir -p build
-	helm package -d build/ deploy/charts/vault-secrets-webhook
+	$(HELM_BIN) package -d build/ deploy/charts/vault-secrets-webhook
+
+.PHONY: artifacts
+artifacts: container-image helm-chart
+artifacts: ## Build docker image and helm chart
+
+##@ Checks
 
 .PHONY: check
-check: test lint ## Run checks (tests and linters)
+check: test lint ## Run lint checks and tests
 
 .PHONY: test
 test: ## Run tests
@@ -77,28 +80,30 @@ lint: ## Run linters
 
 .PHONY: lint-go
 lint-go:
-	golangci-lint run $(if ${CI},--out-format github-actions,)
+	$(GOLANGCI_LINT_BIN) run $(if ${CI},--out-format github-actions,)
 
 .PHONY: lint-helm
 lint-helm:
-	helm lint deploy/charts/vault-secrets-webhook
+	$(HELM_BIN) lint deploy/charts/vault-secrets-webhook
 
 .PHONY: lint-docker
 lint-docker:
-	hadolint Dockerfile
+	$(HADOLINT_BIN) Dockerfile
 
 .PHONY: lint-yaml
 lint-yaml:
-	yamllint $(if ${CI},-f github,) --no-warnings .
-
-.PHONY: fmt
-fmt: ## Format code
-	golangci-lint run --fix
+	$(YAMLLINT_BIN) $(if ${CI},-f github,) --no-warnings .
 
 .PHONY: license-check
 license-check: ## Run license check
-	licensei check
-	licensei header
+	$(LICENSEI_BIN) check
+	$(LICENSEI_BIN) header
+
+.PHONY: fmt
+fmt: ## Format code
+	$(GOLANGCI_LINT_BIN) run --fix
+
+##@ Autogeneration
 
 .PHONY: generate
 generate: generate-helm-docs
@@ -106,10 +111,41 @@ generate: ## Run generation jobs
 
 .PHONY: generate-helm-docs
 generate-helm-docs:
-	helm-docs -s file -c deploy/charts/ -t README.md.gotmpl
+	$(HELM_DOCS_BIN) -s file -c deploy/charts/ -t README.md.gotmpl
 
-deps: bin/golangci-lint bin/licensei bin/kind bin/kurun bin/helm-docs
+##@ Dependencies
+
+deps: bin/golangci-lint bin/licensei bin/kind bin/kurun bin/helm bin/helm-docs
 deps: ## Install dependencies
+
+# Dependency versions
+GOLANGCI_VERSION = 1.53.3
+LICENSEI_VERSION = 0.8.0
+KIND_VERSION = 0.20.0
+KURUN_VERSION = 0.7.0
+HELM_DOCS_VERSION = 1.11.0
+
+# Dependency binaries
+GOLANGCI_LINT_BIN := golangci-lint
+LICENSEI_BIN := licensei
+KIND_BIN := kind
+KURUN_BIN := kurun
+HELM_BIN := helm
+HELM_DOCS_BIN := helm-docs
+
+# TODO: add support for hadolint and yamllint dependencies
+HADOLINT_BIN := hadolint
+YAMLLINT_BIN := yamllint
+
+# If we have "bin" dir, use those binaries instead
+ifneq ($(wildcard ./bin/.),)
+	GOLANGCI_LINT_BIN := bin/$(GOLANGCI_LINT_BIN)
+	LICENSEI_BIN := bin/$(LICENSEI_BIN)
+	KIND_BIN := bin/$(KIND_BIN)
+	KURUN_BIN := bin/$(KURUN_BIN)
+	HELM_BIN := bin/$(HELM_BIN)
+	HELM_DOCS_BIN := bin/$(HELM_DOCS_BIN)
+endif
 
 bin/golangci-lint:
 	@mkdir -p bin
@@ -129,12 +165,12 @@ bin/kurun:
 	curl -Lo bin/kurun https://github.com/banzaicloud/kurun/releases/download/${KURUN_VERSION}/kurun-$(shell uname -s | tr '[:upper:]' '[:lower:]')-$(shell uname -m | sed -e "s/aarch64/arm64/; s/x86_64/amd64/")
 	@chmod +x bin/kurun
 
+bin/helm:
+	@mkdir -p bin
+	curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | USE_SUDO=false HELM_INSTALL_DIR=bin bash
+	@chmod +x bin/helm
+
 bin/helm-docs:
 	@mkdir -p bin
 	curl -L https://github.com/norwoodj/helm-docs/releases/download/v${HELM_DOCS_VERSION}/helm-docs_${HELM_DOCS_VERSION}_$(shell uname)_x86_64.tar.gz | tar -zOxf - helm-docs > ./bin/helm-docs
 	@chmod +x bin/helm-docs
-
-.PHONY: help
-.DEFAULT_GOAL := help
-help:
-	@grep -h -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
