@@ -9,27 +9,22 @@ body:
 
         Please fill out the template below to make it easier to debug your problem.
 
-        If you are not sure if it is a bug or not, you can contact us via the available [support channels](https://github.com/bank-vaults/vault-operator/issues/new/choose).
+        If you are not sure if it is a bug or not, you can contact us via the available [support channels](https://bank-vaults.dev/docs/support/).
   - type: checkboxes
     attributes:
       label: Preflight Checklist
       description: Please ensure you've completed all of the following.
       options:
-        - label: I have searched the [issue tracker](https://www.github.com/bank-vaults/vault-operator/issues) for an issue that matches the one I want to file, without success.
+        - label: I have searched the [issue tracker](https://www.github.com/bank-vaults/vault-secrets-webhook/issues) for an issue that matches the one I want to file, without success.
           required: true
-        - label: I am not looking for support or already pursued the available [support channels](https://github.com/bank-vaults/vault-operator/issues/new/choose) without success.
+        - label: I am not looking for support or already pursued the available [support channels](https://bank-vaults.dev/docs/support/) without success.
+          required: true
+        - label: I agree to follow the [Code of Conduct](https://bank-vaults.dev/docs/code-of-conduct/).
           required: true
   - type: input
     attributes:
       label: Vault Secrets Webhook Version
       description: What version of the Vault Secrets Webhook are you using?
-      placeholder: 1.20.0
-    validations:
-      required: true
-  - type: input
-    attributes:
-      label: Operator Version
-      description: What version of the Operator are you using?
       placeholder: 1.20.0
     validations:
       required: true
@@ -57,7 +52,7 @@ body:
     attributes:
       label: Kubernetes Distribution/Provisioner
       description: Which Kubernetes distribution/privisioner are you using?
-      placeholder: e.g. GKE, EKS, AKS etc
+      placeholder: e.g. GKE, EKS, AKS, etc
     validations:
       required: true
   - type: textarea
@@ -95,7 +90,7 @@ body:
   - type: textarea
     attributes:
       label: Logs
-      description: Operator application logs (if relevant).
+      description: Webhook or application logs (if relevant).
       render: shell
   - type: textarea
     attributes:

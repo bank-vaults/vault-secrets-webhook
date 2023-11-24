@@ -1,5 +1,6 @@
 name: 🎉 Feature request
 description: Suggest an idea for the Vault Secrets Webhook
+labels: [kind/enhancement]
 body:
   - type: markdown
     attributes:
@@ -8,13 +9,15 @@ body:
 
         Please describe what you would like to change/add and why in detail by filling out the template below.
 
-        If you are not sure if your request fits into Dex, you can contact us via the available [support channels](https://github.com/bank-vaults/vault-secrets-webhook/issues/new/choose).
+        If you are not sure if your request fits into Dex, you can contact us via the available [support channels](https://bank-vaults.dev/docs/support/).
   - type: checkboxes
     attributes:
       label: Preflight Checklist
       description: Please ensure you've completed all of the following.
       options:
         - label: I have searched the [issue tracker](https://www.github.com/bank-vaults/vault-secrets-webhook/issues) for an issue that matches the one I want to file, without success.
+          required: true
+        - label: I agree to follow the [Code of Conduct](https://bank-vaults.dev/docs/code-of-conduct/).
           required: true
   - type: textarea
     attributes:
@@ -35,4 +38,4 @@ body:
   - type: textarea
     attributes:
       label: Additional Information
-      description: Add any other context about the problem here.
+      description: Add any other relevant context here.
