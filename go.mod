@@ -5,7 +5,7 @@ go 1.21.1
 require (
 	emperror.dev/errors v0.8.1
 	github.com/bank-vaults/internal v0.2.0
-	github.com/bank-vaults/vault-sdk v0.9.0
+	github.com/bank-vaults/vault-sdk v0.9.1
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/google/go-cmp v0.6.0
 	github.com/google/go-containerregistry v0.16.1
@@ -29,7 +29,7 @@ require (
 	cloud.google.com/go v0.110.7 // indirect
 	cloud.google.com/go/compute v1.23.0 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
-	cloud.google.com/go/iam v1.1.1 // indirect
+	cloud.google.com/go/iam v1.1.3 // indirect
 	cloud.google.com/go/kms v1.15.2 // indirect
 	cloud.google.com/go/storage v1.31.0 // indirect
 	github.com/Azure/azure-sdk-for-go v68.0.0+incompatible // indirect
@@ -50,7 +50,7 @@ require (
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver/v3 v3.2.0 // indirect
 	github.com/Masterminds/sprig/v3 v3.2.3 // indirect
-	github.com/aws/aws-sdk-go v1.45.25 // indirect
+	github.com/aws/aws-sdk-go v1.47.5 // indirect
 	github.com/aws/aws-sdk-go-v2 v1.20.0 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.4.11 // indirect
 	github.com/aws/aws-sdk-go-v2/config v1.18.32 // indirect
@@ -160,7 +160,7 @@ require (
 	golang.org/x/crypto v0.14.0 // indirect
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
 	golang.org/x/net v0.17.0 // indirect
-	golang.org/x/oauth2 v0.12.0 // indirect
+	golang.org/x/oauth2 v0.13.0 // indirect
 	golang.org/x/sync v0.3.0 // indirect
 	golang.org/x/sys v0.13.0 // indirect
 	golang.org/x/term v0.13.0 // indirect
