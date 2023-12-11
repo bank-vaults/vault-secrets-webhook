@@ -27,7 +27,7 @@ RUN go build -o /usr/local/bin/vault-secrets-webhook .
 RUN xx-verify /usr/local/bin/vault-secrets-webhook
 
 
-FROM alpine:3.18.4@sha256:eece025e432126ce23f223450a0326fbebde39cdf496a85d8c016293fc851978
+FROM alpine:3.19.0@sha256:51b67269f354137895d43f3b3d810bfacd3945438e94dc5ac55fdac340352f48
 
 RUN apk add --update --no-cache ca-certificates tzdata libcap
 
