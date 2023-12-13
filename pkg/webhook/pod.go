@@ -845,8 +845,12 @@ func getAgentContainers(originalContainers []corev1.Container, podSecurityContex
 		VolumeMounts:    containerVolMounts,
 		Resources: corev1.ResourceRequirements{
 			Limits: corev1.ResourceList{
-				corev1.ResourceCPU:    vaultConfig.AgentCPU,
-				corev1.ResourceMemory: vaultConfig.AgentMemory,
+				corev1.ResourceCPU:    vaultConfig.AgentCPULimit,
+				corev1.ResourceMemory: vaultConfig.AgentMemoryLimit,
+			},
+			Requests: corev1.ResourceList{
+				corev1.ResourceCPU:    vaultConfig.AgentCPURequest,
+				corev1.ResourceMemory: vaultConfig.AgentMemoryRequest,
 			},
 		},
 	})
