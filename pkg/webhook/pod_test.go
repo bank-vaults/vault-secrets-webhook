@@ -999,8 +999,10 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 					ConfigfilePath:                "/vault/secrets",
 					Addr:                          "test",
 					SkipVerify:                    false,
-					AgentCPU:                      resource.MustParse("50m"),
-					AgentMemory:                   resource.MustParse("128Mi"),
+					AgentCPURequest:               resource.MustParse("200m"),
+					AgentMemoryRequest:            resource.MustParse("256Mi"),
+					AgentCPULimit:                 resource.MustParse("500m"),
+					AgentMemoryLimit:              resource.MustParse("384Mi"),
 					AgentImage:                    "hashicorp/vault:latest",
 					AgentImagePullPolicy:          "IfNotPresent",
 					ServiceAccountTokenVolumeName: "/var/run/secrets/kubernetes.io/serviceaccount",
@@ -1021,8 +1023,12 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 							Args:            []string{"agent", "-config", "/vault/config/config.hcl"},
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
-									corev1.ResourceCPU:    resource.MustParse("50m"),
-									corev1.ResourceMemory: resource.MustParse("128Mi"),
+									corev1.ResourceCPU:    resource.MustParse("500m"),
+									corev1.ResourceMemory: resource.MustParse("384Mi"),
+								},
+								Requests: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("200m"),
+									corev1.ResourceMemory: resource.MustParse("256Mi"),
 								},
 							},
 							Env: []corev1.EnvVar{

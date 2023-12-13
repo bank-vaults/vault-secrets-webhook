@@ -64,8 +64,10 @@ type VaultConfig struct {
 	AgentOnce                     bool
 	AgentShareProcess             bool
 	AgentShareProcessDefault      string
-	AgentCPU                      resource.Quantity
-	AgentMemory                   resource.Quantity
+	AgentCPULimit                 resource.Quantity
+	AgentMemoryLimit              resource.Quantity
+	AgentCPURequest               resource.Quantity
+	AgentMemoryRequest            resource.Quantity
 	AgentImage                    string
 	AgentImagePullPolicy          corev1.PullPolicy
 	AgentEnvVariables             string
@@ -318,16 +320,34 @@ func parseVaultConfig(obj metav1.Object, ar *model.AdmissionReview) VaultConfig 
 		vaultConfig.AgentOnce = false
 	}
 
-	if val, err := resource.ParseQuantity(annotations["vault.security.banzaicloud.io/vault-agent-cpu"]); err == nil {
-		vaultConfig.AgentCPU = val
+    // This is done to preserve backwards compatibility with vault-agent-cpu
+    if val, err := resource.ParseQuantity(annotations["vault.security.banzaicloud.io/vault-agent-cpu"]); err == nil {
+    	vaultConfig.AgentCPULimit = val
+    } else if val, err := resource.ParseQuantity(annotations["vault.security.banzaicloud.io/vault-agent-cpu-limit"]); err == nil {
+    	vaultConfig.AgentCPULimit = val
+    } else {
+    	vaultConfig.AgentCPULimit = resource.MustParse("100m")
+    }
+
+    // This is done to preserve backwards compatibility with vault-agent-memory
+    if val, err := resource.ParseQuantity(annotations["vault.security.banzaicloud.io/vault-agent-memory"]); err == nil {
+    	vaultConfig.AgentMemoryLimit = val
+    } else if val, err := resource.ParseQuantity(annotations["vault.security.banzaicloud.io/vault-agent-memory-limit"]); err == nil {
+    	vaultConfig.AgentMemoryLimit = val
+    } else {
+    	vaultConfig.AgentMemoryLimit = resource.MustParse("128Mi")
+    }
+
+	if val, err := resource.ParseQuantity(annotations["vault.security.banzaicloud.io/vault-agent-cpu-request"]); err == nil {
+		vaultConfig.AgentCPURequest = val
 	} else {
-		vaultConfig.AgentCPU = resource.MustParse("100m")
+		vaultConfig.AgentCPURequest = resource.MustParse("100m")
 	}
 
-	if val, err := resource.ParseQuantity(annotations["vault.security.banzaicloud.io/vault-agent-memory"]); err == nil {
-		vaultConfig.AgentMemory = val
+	if val, err := resource.ParseQuantity(annotations["vault.security.banzaicloud.io/vault-agent-memory-request"]); err == nil {
+		vaultConfig.AgentMemoryRequest = val
 	} else {
-		vaultConfig.AgentMemory = resource.MustParse("128Mi")
+		vaultConfig.AgentMemoryRequest = resource.MustParse("128Mi")
 	}
 
 	if val, ok := annotations["vault.security.banzaicloud.io/vault-agent-share-process-namespace"]; ok {
