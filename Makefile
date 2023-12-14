@@ -46,7 +46,7 @@ build: ## Build binary
 
 .PHONY: container-image
 container-image: ## Build container image
-	docker build -t ${CONTAINER_IMAGE_REF} .
+	docker build -t ${CONTAINER_IMAGE_REF} . --platform linux/amd64
 
 .PHONY: helm-chart
 helm-chart: ## Build Helm chart
