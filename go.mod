@@ -5,7 +5,7 @@ go 1.21.1
 require (
 	emperror.dev/errors v0.8.1
 	github.com/bank-vaults/internal v0.2.0
-	github.com/bank-vaults/vault-sdk v0.9.1
+	github.com/bank-vaults/vault-sdk v0.9.2
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/google/go-cmp v0.6.0
 	github.com/google/go-containerregistry v0.17.0
@@ -50,7 +50,7 @@ require (
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver/v3 v3.2.0 // indirect
 	github.com/Masterminds/sprig/v3 v3.2.3 // indirect
-	github.com/aws/aws-sdk-go v1.47.5 // indirect
+	github.com/aws/aws-sdk-go v1.49.8 // indirect
 	github.com/aws/aws-sdk-go-v2 v1.20.0 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.4.11 // indirect
 	github.com/aws/aws-sdk-go-v2/config v1.18.32 // indirect
