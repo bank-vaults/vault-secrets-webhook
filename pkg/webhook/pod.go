@@ -859,13 +859,7 @@ func getBaseSecurityContext(podSecurityContext *corev1.PodSecurityContext, vault
 		AllowPrivilegeEscalation: &vaultConfig.PspAllowPrivilegeEscalation,
 		ReadOnlyRootFilesystem:   &vaultConfig.ReadOnlyRootFilesystem,
 		Capabilities: &corev1.Capabilities{
-			Add: []corev1.Capability{
-				"CHOWN",
-				"SETFCAP",
-				"SETGID",
-				"SETPCAP",
-				"SETUID",
-			},
+			Add: []corev1.Capability{},
 			Drop: []corev1.Capability{
 				"ALL",
 			},

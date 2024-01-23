@@ -514,13 +514,7 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 		ReadOnlyRootFilesystem:   &vaultConfig.ReadOnlyRootFilesystem,
 		AllowPrivilegeEscalation: &vaultConfig.PspAllowPrivilegeEscalation,
 		Capabilities: &corev1.Capabilities{
-			Add: []corev1.Capability{
-				"CHOWN",
-				"SETFCAP",
-				"SETGID",
-				"SETPCAP",
-				"SETUID",
-			},
+			Add: []corev1.Capability{},
 			Drop: []corev1.Capability{
 				"ALL",
 			},
