@@ -126,7 +126,9 @@ webhooks:
       name: {{ template "vault-secrets-webhook.fullname" . }}
       path: /pods
     {{- end }}
+    {{- if not .Values.certificate.useCertManager }}
     caBundle: {{ $caCrt }}
+    {{- end }}
   rules:
   - operations:
     - CREATE
@@ -188,7 +190,9 @@ webhooks:
       name: {{ template "vault-secrets-webhook.fullname" . }}
       path: /secrets
     {{- end }}
+    {{- if not .Values.certificate.useCertManager }}
     caBundle: {{ $caCrt }}
+    {{- end }}
   rules:
   - operations:
     - CREATE
@@ -256,7 +260,9 @@ webhooks:
       name: {{ template "vault-secrets-webhook.fullname" . }}
       path: /configmaps
     {{- end }}
+    {{- if not .Values.certificate.useCertManager }}
     caBundle: {{ $caCrt }}
+    {{- end }}
   rules:
     - operations:
         - CREATE
@@ -321,7 +327,9 @@ webhooks:
       name: {{ template "vault-secrets-webhook.fullname" . }}
       path: /objects
     {{- end }}
+    {{- if not .Values.certificate.useCertManager }}
     caBundle: {{ $caCrt }}
+    {{- end }}
   rules:
   - operations:
     - CREATE
