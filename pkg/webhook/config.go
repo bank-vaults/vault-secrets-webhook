@@ -320,23 +320,23 @@ func parseVaultConfig(obj metav1.Object, ar *model.AdmissionReview) VaultConfig 
 		vaultConfig.AgentOnce = false
 	}
 
-    // This is done to preserve backwards compatibility with vault-agent-cpu
-    if val, err := resource.ParseQuantity(annotations["vault.security.banzaicloud.io/vault-agent-cpu"]); err == nil {
-    	vaultConfig.AgentCPULimit = val
-    } else if val, err := resource.ParseQuantity(annotations["vault.security.banzaicloud.io/vault-agent-cpu-limit"]); err == nil {
-    	vaultConfig.AgentCPULimit = val
-    } else {
-    	vaultConfig.AgentCPULimit = resource.MustParse("100m")
-    }
+	// This is done to preserve backwards compatibility with vault-agent-cpu
+	if val, err := resource.ParseQuantity(annotations["vault.security.banzaicloud.io/vault-agent-cpu"]); err == nil {
+		vaultConfig.AgentCPULimit = val
+	} else if val, err := resource.ParseQuantity(annotations["vault.security.banzaicloud.io/vault-agent-cpu-limit"]); err == nil {
+		vaultConfig.AgentCPULimit = val
+	} else {
+		vaultConfig.AgentCPULimit = resource.MustParse("100m")
+	}
 
-    // This is done to preserve backwards compatibility with vault-agent-memory
-    if val, err := resource.ParseQuantity(annotations["vault.security.banzaicloud.io/vault-agent-memory"]); err == nil {
-    	vaultConfig.AgentMemoryLimit = val
-    } else if val, err := resource.ParseQuantity(annotations["vault.security.banzaicloud.io/vault-agent-memory-limit"]); err == nil {
-    	vaultConfig.AgentMemoryLimit = val
-    } else {
-    	vaultConfig.AgentMemoryLimit = resource.MustParse("128Mi")
-    }
+	// This is done to preserve backwards compatibility with vault-agent-memory
+	if val, err := resource.ParseQuantity(annotations["vault.security.banzaicloud.io/vault-agent-memory"]); err == nil {
+		vaultConfig.AgentMemoryLimit = val
+	} else if val, err := resource.ParseQuantity(annotations["vault.security.banzaicloud.io/vault-agent-memory-limit"]); err == nil {
+		vaultConfig.AgentMemoryLimit = val
+	} else {
+		vaultConfig.AgentMemoryLimit = resource.MustParse("128Mi")
+	}
 
 	if val, err := resource.ParseQuantity(annotations["vault.security.banzaicloud.io/vault-agent-cpu-request"]); err == nil {
 		vaultConfig.AgentCPURequest = val
