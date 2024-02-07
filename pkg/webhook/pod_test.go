@@ -466,6 +466,104 @@ func Test_mutatingWebhook_mutateContainers(t *testing.T) {
 			mutated: true,
 			wantErr: false,
 		},
+		{
+			name: "Mutating does not change pods log level if it is already set in the container",
+			fields: fields{
+				k8sClient: fake.NewSimpleClientset(),
+				registry: &MockRegistry{
+					Image: v1.Config{},
+				},
+			},
+			args: args{
+				containers: []corev1.Container{
+					{
+						Name:    "MyContainer",
+						Image:   "myimage",
+						Command: []string{"/bin/bash"},
+						Args:    nil,
+						Env: []corev1.EnvVar{
+							{
+								Name:  "myvar",
+								Value: "vault:secrets",
+							},
+							{
+								Name:  "VAULT_LOG_LEVEL",
+								Value: "info",
+							},
+						},
+					},
+				},
+				vaultConfig: VaultConfig{
+					Addr:                 "addr",
+					SkipVerify:           false,
+					Path:                 "path",
+					Role:                 "role",
+					AuthMethod:           "jwt",
+					IgnoreMissingSecrets: "ignoreMissingSecrets",
+					VaultEnvPassThrough:  "vaultEnvPassThrough",
+					EnableJSONLog:        "enableJSONLog",
+					ClientTimeout:        10 * time.Second,
+					LogLevel:             "debug",
+				},
+			},
+			wantedContainers: []corev1.Container{
+				{
+					Name:         "MyContainer",
+					Image:        "myimage",
+					Command:      []string{"/vault/vault-env"},
+					Args:         []string{"/bin/bash"},
+					VolumeMounts: []corev1.VolumeMount{{Name: "vault-env", MountPath: "/vault/"}},
+					Env: []corev1.EnvVar{
+						{
+							Name:  "myvar",
+							Value: "vault:secrets",
+						},
+						{
+							Name:  "VAULT_LOG_LEVEL",
+							Value: "info",
+						},
+						{
+							Name:  "VAULT_ADDR",
+							Value: "addr",
+						},
+						{
+							Name:  "VAULT_SKIP_VERIFY",
+							Value: "false",
+						},
+						{
+							Name:  "VAULT_AUTH_METHOD",
+							Value: "jwt",
+						},
+						{
+							Name:  "VAULT_PATH",
+							Value: "path",
+						},
+						{
+							Name:  "VAULT_ROLE",
+							Value: "role",
+						},
+						{
+							Name:  "VAULT_IGNORE_MISSING_SECRETS",
+							Value: "ignoreMissingSecrets",
+						},
+						{
+							Name:  "VAULT_ENV_PASSTHROUGH",
+							Value: "vaultEnvPassThrough",
+						},
+						{
+							Name:  "VAULT_JSON_LOG",
+							Value: "enableJSONLog",
+						},
+						{
+							Name:  "VAULT_CLIENT_TIMEOUT",
+							Value: "10s",
+						},
+					},
+				},
+			},
+			mutated: true,
+			wantErr: false,
+		},
 	}
 
 	for _, tt := range tests {
