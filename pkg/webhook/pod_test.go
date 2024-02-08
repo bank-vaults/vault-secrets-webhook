@@ -467,7 +467,7 @@ func Test_mutatingWebhook_mutateContainers(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "Mutating does not change pods log level if it is already set in the container",
+			name: "Mutate will not change the containers log level if was already set",
 			fields: fields{
 				k8sClient: fake.NewSimpleClientset(),
 				registry: &MockRegistry{
