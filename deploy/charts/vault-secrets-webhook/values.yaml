@@ -173,6 +173,19 @@ topologySpreadConstraints: {}
 # Check: https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/
 priorityClassName: ""
 
+# -- Liveness and readiness probes for the webhook container
+livenessProbe:
+  initialDelaySeconds: 30
+  failureThreshold: 3
+  periodSeconds: 10
+  successThreshold: 1
+  timeoutSeconds: 1
+readinessProbe:
+  failureThreshold: 3
+  periodSeconds: 10
+  successThreshold: 1
+  timeoutSeconds: 1
+
 rbac:
   psp:
     # -- Use pod security policy
