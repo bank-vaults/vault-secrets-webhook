@@ -181,9 +181,8 @@ func getImageConfig(ctx context.Context, client kubernetes.Interface, container 
 	}
 
 	if registrySkipVerify {
-		tr := &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, //nolint:gosec
-		}
+		tr := remote.DefaultTransport.(*http.Transport).Clone()
+		tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: true} //nolint:gosec
 		options = append(options, remote.WithTransport(tr))
 	}
 
