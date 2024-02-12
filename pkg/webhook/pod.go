@@ -358,8 +358,7 @@ func (mw *MutatingWebhook) mutateContainers(ctx context.Context, containers []co
 			})
 		}
 
-		ok := isLogLevelSet(container.Env)
-		if !ok && vaultConfig.LogLevel != "" {
+		if !isLogLevelSet(container.Env) && vaultConfig.LogLevel != "" {
 			container.Env = append(container.Env, []corev1.EnvVar{
 				{
 					Name:  "VAULT_LOG_LEVEL",
