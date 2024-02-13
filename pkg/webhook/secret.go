@@ -18,6 +18,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"emperror.dev/errors"
@@ -31,9 +32,9 @@ type dockerCredentials struct {
 
 // dockerAuthConfig contains authorization information for connecting to a Registry
 type dockerAuthConfig struct {
-	Username string `json:"username,omitempty"`
-	Password string `json:"password,omitempty"`
-	Auth     string `json:"auth,omitempty"`
+	Username string      `json:"username,omitempty"`
+	Password string      `json:"password,omitempty"`
+	Auth     interface{} `json:"auth,omitempty"`
 
 	// Email is an optional value associated with the username.
 	// This field is deprecated and will be removed in a later
@@ -60,14 +61,33 @@ func secretNeedsMutation(secret *corev1.Secret) (bool, error) {
 			}
 
 			for _, creds := range dc.Auths {
-				authBytes, err := base64.StdEncoding.DecodeString(creds.Auth)
-				if err != nil {
-					return false, errors.Wrap(err, "auth base64 decoding failed")
-				}
+				switch creds.Auth.(type) {
+				case string:
+					authBytes, err := base64.StdEncoding.DecodeString(creds.Auth.(string))
+					if err != nil {
+						return false, errors.Wrap(err, "auth base64 decoding failed")
+					}
 
-				auth := string(authBytes)
-				if hasVaultPrefix(auth) {
-					return true, nil
+					auth := string(authBytes)
+					if hasVaultPrefix(auth) {
+						return true, nil
+					}
+				case map[string]interface{}:
+					// get sub-keys from the auth field
+					authMap, ok := creds.Auth.(map[string]interface{})
+					if !ok {
+						return false, errors.New("invalid auth type")
+					}
+					// check if any of the sub-keys have a vault prefix
+					for _, v := range authMap {
+						if hasVaultPrefix(v.(string)) {
+							return true, nil
+						}
+					}
+					return false, nil
+
+				default:
+					return false, errors.New("invalid auth type")
 				}
 			}
 		} else if hasVaultPrefix(string(value)) {
@@ -128,19 +148,17 @@ func (mw *MutatingWebhook) mutateDockerCreds(secret *corev1.Secret, dc *dockerCr
 	assembled := dockerCredentials{Auths: map[string]dockerAuthConfig{}}
 
 	for key, creds := range dc.Auths {
-		authBytes, err := base64.StdEncoding.DecodeString(creds.Auth)
+		authBytes, err := base64.StdEncoding.DecodeString(creds.Auth.(string))
 		if err != nil {
 			return errors.Wrap(err, "auth base64 decoding failed")
 		}
 
 		auth := string(authBytes)
 		if hasVaultPrefix(auth) {
-			split := strings.Split(auth, ":")
-			if len(split) != 4 {
-				return errors.New("splitting auth credentials failed")
+			username, password, err := handleAuthString(auth)
+			if err != nil {
+				return errors.Wrap(err, "invalid auth string")
 			}
-			username := fmt.Sprintf("%s:%s", split[0], split[1])
-			password := fmt.Sprintf("%s:%s", split[2], split[3])
 
 			credentialData := map[string]string{
 				"username": username,
@@ -190,4 +208,53 @@ func (mw *MutatingWebhook) mutateSecretData(secret *corev1.Secret, secretInjecto
 	}
 
 	return nil
+}
+
+func handleAuthString(auth string) (string, string, error) {
+	// if the auth string is formatted as "username:usr:password:pass",
+	// split the string into username and password
+	split := strings.Split(auth, ":")
+	if len(split) == 4 {
+		username := fmt.Sprintf("%s:%s", split[0], split[1])
+		password := fmt.Sprintf("%s:%s", split[2], split[3])
+
+		return username, password, nil
+	}
+
+	// if the auth string is a JSON key,
+	// don't split and use it as is
+	ok := IsJSONKey(auth)
+	if ok {
+		return auth, "", nil
+	}
+	// if none of the above, the auth string can still be a valid vault path
+	if validVaultPath(auth) {
+		return auth, "", nil
+	}
+
+	return "", "", errors.New("invalid auth string")
+}
+
+func IsJSONKey(auth string) bool {
+	var authMap map[string]interface{}
+	err := json.Unmarshal([]byte(auth), &authMap)
+	if err != nil {
+		return false
+	}
+
+	// if there are sub-keys present under the auth key
+	// assume a JSON key
+	if len(authMap) > 0 {
+		return true
+	}
+
+	return false
+}
+
+// hasVaultPrefix checks if the given string is a valid vault path
+func validVaultPath(auth string) bool {
+	re := regexp.MustCompile(`^(vault:secret)(\/\w+)+(#.+)`)
+	match := re.MatchString(auth)
+
+	return match
 }
