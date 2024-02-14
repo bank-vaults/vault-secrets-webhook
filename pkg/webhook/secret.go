@@ -72,6 +72,7 @@ func secretNeedsMutation(secret *corev1.Secret) (bool, error) {
 					if hasVaultPrefix(auth) {
 						return true, nil
 					}
+
 				case map[string]interface{}:
 					// get sub-keys from the auth field
 					authMap, ok := creds.Auth.(map[string]interface{})
@@ -223,10 +224,10 @@ func handleAuthString(auth string) (string, string, error) {
 
 	// if the auth string is a JSON key,
 	// don't split and use it as is
-	ok := IsJSONKey(auth)
-	if ok {
+	if IsJSONKey(auth) {
 		return auth, "", nil
 	}
+
 	// if none of the above, the auth string can still be a valid vault path
 	if validVaultPath(auth) {
 		return auth, "", nil
