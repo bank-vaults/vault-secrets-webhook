@@ -917,6 +917,8 @@ func getConfigMapForVaultAgent(pod *corev1.Pod, vaultConfig VaultConfig) *corev1
 	}
 }
 
+// isLogLevelSet checks if the VAULT_LOG_LEVEL environment variable
+// has already been set in the container, so it doesn't get overridden.
 func isLogLevelSet(envVars []corev1.EnvVar) bool {
 	for _, envVar := range envVars {
 		if envVar.Name == "VAULT_LOG_LEVEL" {
