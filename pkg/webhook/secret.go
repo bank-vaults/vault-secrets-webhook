@@ -79,6 +79,7 @@ func secretNeedsMutation(secret *corev1.Secret) (bool, error) {
 					if !ok {
 						return false, errors.New("invalid auth type")
 					}
+
 					// check if any of the sub-keys have a vault prefix
 					for _, v := range authMap {
 						if hasVaultPrefix(v.(string)) {
@@ -224,7 +225,7 @@ func handleAuthString(auth string) (string, string, error) {
 
 	// if the auth string is a JSON key,
 	// don't split and use it as is
-	if IsJSONKey(auth) {
+	if isJSONKey(auth) {
 		return auth, "", nil
 	}
 
@@ -236,7 +237,7 @@ func handleAuthString(auth string) (string, string, error) {
 	return "", "", errors.New("invalid auth string")
 }
 
-func IsJSONKey(auth string) bool {
+func isJSONKey(auth string) bool {
 	var authMap map[string]interface{}
 	err := json.Unmarshal([]byte(auth), &authMap)
 	if err != nil {
