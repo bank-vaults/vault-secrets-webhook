@@ -358,7 +358,7 @@ func (mw *MutatingWebhook) mutateContainers(ctx context.Context, containers []co
 			})
 		}
 
-		if vaultConfig.LogLevel != "" {
+		if !isLogLevelSet(container.Env) && vaultConfig.LogLevel != "" {
 			container.Env = append(container.Env, []corev1.EnvVar{
 				{
 					Name:  "VAULT_LOG_LEVEL",
@@ -915,4 +915,15 @@ func getConfigMapForVaultAgent(pod *corev1.Pod, vaultConfig VaultConfig) *corev1
 			"config.hcl": fmt.Sprintf(vaultAgentConfig, vaultConfig.VaultNamespace, vaultConfig.Path, vaultConfig.Role),
 		},
 	}
+}
+
+// isLogLevelSet checks if the VAULT_LOG_LEVEL environment variable
+// has already been set in the container, so it doesn't get overridden.
+func isLogLevelSet(envVars []corev1.EnvVar) bool {
+	for _, envVar := range envVars {
+		if envVar.Name == "VAULT_LOG_LEVEL" {
+			return true
+		}
+	}
+	return false
 }
