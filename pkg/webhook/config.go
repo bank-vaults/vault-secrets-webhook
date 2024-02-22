@@ -96,19 +96,19 @@ func parseVaultConfig(obj metav1.Object, ar *model.AdmissionReview) VaultConfig 
 
 	annotations := obj.GetAnnotations()
 
-	if val := annotations["vault.security.banzaicloud.io/mutate"]; val == "skip" {
+	if val := annotations[MutateAnnotation]; val == "skip" {
 		vaultConfig.Skip = true
 
 		return vaultConfig
 	}
 
-	if val, ok := annotations["vault.security.banzaicloud.io/vault-addr"]; ok {
+	if val, ok := annotations[VaultAddrAnnotation]; ok {
 		vaultConfig.Addr = val
 	} else {
 		vaultConfig.Addr = viper.GetString("vault_addr")
 	}
 
-	if val, ok := annotations["vault.security.banzaicloud.io/vault-role"]; ok {
+	if val, ok := annotations[VaultRoleAnnotation]; ok {
 		vaultConfig.Role = val
 	} else {
 		if val := viper.GetString("vault_role"); val != "" {
@@ -123,68 +123,68 @@ func parseVaultConfig(obj metav1.Object, ar *model.AdmissionReview) VaultConfig 
 		}
 	}
 
-	if val, ok := annotations["vault.security.banzaicloud.io/vault-auth-method"]; ok {
+	if val, ok := annotations[VaultAuthMethodAnnotation]; ok {
 		vaultConfig.AuthMethod = val
 	} else {
 		vaultConfig.AuthMethod = viper.GetString("vault_auth_method")
 	}
 
-	if val, ok := annotations["vault.security.banzaicloud.io/vault-path"]; ok {
+	if val, ok := annotations[VaultPathAnnotation]; ok {
 		vaultConfig.Path = val
 	} else {
 		vaultConfig.Path = viper.GetString("vault_path")
 	}
 
 	// TODO: Check for flag to verify we want to use namespace-local SAs instead of the vault webhook namespaces SA
-	if val, ok := annotations["vault.security.banzaicloud.io/vault-serviceaccount"]; ok {
+	if val, ok := annotations[VaultServiceaccountAnnotation]; ok {
 		vaultConfig.VaultServiceAccount = val
 	} else {
 		vaultConfig.VaultServiceAccount = viper.GetString("vault_serviceaccount")
 	}
 
-	if val, ok := annotations["vault.security.banzaicloud.io/vault-skip-verify"]; ok {
+	if val, ok := annotations[VaultSkipVerifyAnnotation]; ok {
 		vaultConfig.SkipVerify, _ = strconv.ParseBool(val)
 	} else {
 		vaultConfig.SkipVerify = viper.GetBool("vault_skip_verify")
 	}
 
-	if val, ok := annotations["vault.security.banzaicloud.io/vault-tls-secret"]; ok {
+	if val, ok := annotations[VaultTLSSecretAnnotation]; ok {
 		vaultConfig.TLSSecret = val
 	} else {
 		vaultConfig.TLSSecret = viper.GetString("vault_tls_secret")
 	}
 
-	if val, ok := annotations["vault.security.banzaicloud.io/vault-client-timeout"]; ok {
+	if val, ok := annotations[VaultClientTimeoutAnnotation]; ok {
 		vaultConfig.ClientTimeout, _ = time.ParseDuration(val)
 	} else {
 		vaultConfig.ClientTimeout, _ = time.ParseDuration(viper.GetString("vault_client_timeout"))
 	}
 
-	if val, ok := annotations["vault.security.banzaicloud.io/vault-agent"]; ok {
+	if val, ok := annotations[VaultAgentAnnotation]; ok {
 		vaultConfig.UseAgent, _ = strconv.ParseBool(val)
 	} else {
 		vaultConfig.UseAgent, _ = strconv.ParseBool(viper.GetString("vault_agent"))
 	}
 
-	if val, ok := annotations["vault.security.banzaicloud.io/vault-env-daemon"]; ok {
+	if val, ok := annotations[VaultEnvDaemonAnnotation]; ok {
 		vaultConfig.VaultEnvDaemon, _ = strconv.ParseBool(val)
 	} else {
 		vaultConfig.VaultEnvDaemon, _ = strconv.ParseBool(viper.GetString("vault_env_daemon"))
 	}
 
-	if val, ok := annotations["vault.security.banzaicloud.io/vault-env-delay"]; ok {
+	if val, ok := annotations[VaultEnvDelayAnnotation]; ok {
 		vaultConfig.VaultEnvDelay, _ = time.ParseDuration(val)
 	} else {
 		vaultConfig.VaultEnvDelay, _ = time.ParseDuration(viper.GetString("vault_env_delay"))
 	}
 
-	if val, ok := annotations["vault.security.banzaicloud.io/vault-ct-configmap"]; ok {
+	if val, ok := annotations[VaultConsulTemplateConfigmapAnnotation]; ok {
 		vaultConfig.CtConfigMap = val
 	} else {
 		vaultConfig.CtConfigMap = ""
 	}
 
-	if val, ok := annotations["vault.security.banzaicloud.io/service-account-token-volume-name"]; ok {
+	if val, ok := annotations[ServiceAccountTokenVolumeNameAnnotation]; ok {
 		vaultConfig.ServiceAccountTokenVolumeName = val
 	} else if viper.GetString("SERVICE_ACCOUNT_TOKEN_VOLUME_NAME") != "" {
 		vaultConfig.ServiceAccountTokenVolumeName = viper.GetString("SERVICE_ACCOUNT_TOKEN_VOLUME_NAME")
@@ -192,55 +192,55 @@ func parseVaultConfig(obj metav1.Object, ar *model.AdmissionReview) VaultConfig 
 		vaultConfig.ServiceAccountTokenVolumeName = "/var/run/secrets/kubernetes.io/serviceaccount"
 	}
 
-	if val, ok := annotations["vault.security.banzaicloud.io/vault-ct-image"]; ok {
+	if val, ok := annotations[VaultConsulTemplateImageAnnotation]; ok {
 		vaultConfig.CtImage = val
 	} else {
 		vaultConfig.CtImage = viper.GetString("vault_ct_image")
 	}
 
-	if val, ok := annotations["vault.security.banzaicloud.io/vault-ignore-missing-secrets"]; ok {
+	if val, ok := annotations[VaultIgnoreMissingSecretsAnnotation]; ok {
 		vaultConfig.IgnoreMissingSecrets = val
 	} else {
 		vaultConfig.IgnoreMissingSecrets = viper.GetString("vault_ignore_missing_secrets")
 	}
-	if val, ok := annotations["vault.security.banzaicloud.io/vault-env-passthrough"]; ok {
+	if val, ok := annotations[VaultEnvPassthroughAnnotation]; ok {
 		vaultConfig.VaultEnvPassThrough = val
 	} else {
 		vaultConfig.VaultEnvPassThrough = viper.GetString("vault_env_passthrough")
 	}
-	if val, ok := annotations["vault.security.banzaicloud.io/vault-configfile-path"]; ok {
+	if val, ok := annotations[VaultConfigfilePathAnnotation]; ok {
 		vaultConfig.ConfigfilePath = val
-	} else if val, ok := annotations["vault.security.banzaicloud.io/vault-ct-secrets-mount-path"]; ok {
+	} else if val, ok := annotations[VaultConsuleTemplateSecretsMountPathAnnotation]; ok {
 		vaultConfig.ConfigfilePath = val
 	} else {
 		vaultConfig.ConfigfilePath = "/vault/secrets"
 	}
 
-	if val, ok := annotations["vault.security.banzaicloud.io/vault-ct-pull-policy"]; ok {
+	if val, ok := annotations[VaultConsulTemplatePullPolicyAnnotation]; ok {
 		vaultConfig.CtImagePullPolicy = getPullPolicy(val)
 	} else {
 		vaultConfig.CtImagePullPolicy = getPullPolicy(viper.GetString("vault_ct_pull_policy"))
 	}
 
-	if val, ok := annotations["vault.security.banzaicloud.io/vault-ct-once"]; ok {
+	if val, ok := annotations[VaultConsulTemplateOnceAnnotation]; ok {
 		vaultConfig.CtOnce, _ = strconv.ParseBool(val)
 	} else {
 		vaultConfig.CtOnce = false
 	}
 
-	if val, err := resource.ParseQuantity(annotations["vault.security.banzaicloud.io/vault-ct-cpu"]); err == nil {
+	if val, err := resource.ParseQuantity(annotations[VaultConsulTemplateCPUAnnotation]); err == nil {
 		vaultConfig.CtCPU = val
 	} else {
 		vaultConfig.CtCPU = resource.MustParse("100m")
 	}
 
-	if val, err := resource.ParseQuantity(annotations["vault.security.banzaicloud.io/vault-ct-memory"]); err == nil {
+	if val, err := resource.ParseQuantity(annotations[VaultConsulTemplateMemoryAnnotation]); err == nil {
 		vaultConfig.CtMemory = val
 	} else {
 		vaultConfig.CtMemory = resource.MustParse("128Mi")
 	}
 
-	if val, ok := annotations["vault.security.banzaicloud.io/vault-ct-share-process-namespace"]; ok {
+	if val, ok := annotations[VaultConsulTemplateShareProcessNamespaceAnnotation]; ok {
 		vaultConfig.CtShareProcessDefault = "found"
 		vaultConfig.CtShareProcess, _ = strconv.ParseBool(val)
 	} else {
@@ -248,109 +248,109 @@ func parseVaultConfig(obj metav1.Object, ar *model.AdmissionReview) VaultConfig 
 		vaultConfig.CtShareProcess = false
 	}
 
-	if val, ok := annotations["vault.security.banzaicloud.io/psp-allow-privilege-escalation"]; ok {
+	if val, ok := annotations[PSPAllowPrivilegeEscalationAnnotation]; ok {
 		vaultConfig.PspAllowPrivilegeEscalation, _ = strconv.ParseBool(val)
 	} else {
 		vaultConfig.PspAllowPrivilegeEscalation, _ = strconv.ParseBool(viper.GetString("psp_allow_privilege_escalation"))
 	}
 
-	if val, ok := annotations["vault.security.banzaicloud.io/run-as-non-root"]; ok {
+	if val, ok := annotations[RunAsNonRootAnnotation]; ok {
 		vaultConfig.RunAsNonRoot, _ = strconv.ParseBool(val)
 	} else {
 		vaultConfig.RunAsNonRoot, _ = strconv.ParseBool(viper.GetString("run_as_non_root"))
 	}
 
-	if val, ok := annotations["vault.security.banzaicloud.io/run-as-user"]; ok {
+	if val, ok := annotations[RunAsUserAnnotation]; ok {
 		vaultConfig.RunAsUser, _ = strconv.ParseInt(val, 10, 64)
 	} else {
 		vaultConfig.RunAsUser, _ = strconv.ParseInt(viper.GetString("run_as_user"), 0, 64)
 	}
 
-	if val, ok := annotations["vault.security.banzaicloud.io/run-as-group"]; ok {
+	if val, ok := annotations[RunAsGroupAnnotation]; ok {
 		vaultConfig.RunAsGroup, _ = strconv.ParseInt(val, 10, 64)
 	} else {
 		vaultConfig.RunAsGroup, _ = strconv.ParseInt(viper.GetString("run_as_group"), 0, 64)
 	}
 
-	if val, ok := annotations["vault.security.banzaicloud.io/readonly-root-fs"]; ok {
+	if val, ok := annotations[ReadOnlyRootFsAnnotation]; ok {
 		vaultConfig.ReadOnlyRootFilesystem, _ = strconv.ParseBool(val)
 	} else {
 		vaultConfig.ReadOnlyRootFilesystem, _ = strconv.ParseBool(viper.GetString("readonly_root_fs"))
 	}
 
-	if val, ok := annotations["vault.security.banzaicloud.io/registry-skip-verify"]; ok {
+	if val, ok := annotations[RegistrySkipVerifyAnnotation]; ok {
 		vaultConfig.RegistrySkipVerify, _ = strconv.ParseBool(val)
 	} else {
 		vaultConfig.RegistrySkipVerify, _ = strconv.ParseBool(viper.GetString("registry_skip_verify"))
 	}
 
-	if val, ok := annotations["vault.security.banzaicloud.io/log-level"]; ok {
+	if val, ok := annotations[LogLevelAnnotation]; ok {
 		vaultConfig.LogLevel = val
 	} else {
 		vaultConfig.LogLevel = viper.GetString("log_level")
 	}
 
-	if val, ok := annotations["vault.security.banzaicloud.io/enable-json-log"]; ok {
+	if val, ok := annotations[EnableJSONLogAnnotation]; ok {
 		vaultConfig.EnableJSONLog = val
 	} else {
 		vaultConfig.EnableJSONLog = viper.GetString("enable_json_log")
 	}
 
-	if val, ok := annotations["vault.security.banzaicloud.io/transit-key-id"]; ok {
+	if val, ok := annotations[TransitKeyIDAnnotation]; ok {
 		vaultConfig.TransitKeyID = val
 	} else {
 		vaultConfig.TransitKeyID = viper.GetString("transit_key_id")
 	}
 
-	if val, ok := annotations["vault.security.banzaicloud.io/transit-path"]; ok {
+	if val, ok := annotations[TransitPathAnnotation]; ok {
 		vaultConfig.TransitPath = val
 	} else {
 		vaultConfig.TransitPath = viper.GetString("transit_path")
 	}
 
-	if val, ok := annotations["vault.security.banzaicloud.io/vault-agent-configmap"]; ok {
+	if val, ok := annotations[VaultAgentConfigmapAnnotation]; ok {
 		vaultConfig.AgentConfigMap = val
 	} else {
 		vaultConfig.AgentConfigMap = ""
 	}
 
-	if val, ok := annotations["vault.security.banzaicloud.io/vault-agent-once"]; ok {
+	if val, ok := annotations[VaultAgentOnceAnnotation]; ok {
 		vaultConfig.AgentOnce, _ = strconv.ParseBool(val)
 	} else {
 		vaultConfig.AgentOnce = false
 	}
 
 	// This is done to preserve backwards compatibility with vault-agent-cpu
-	if val, err := resource.ParseQuantity(annotations["vault.security.banzaicloud.io/vault-agent-cpu"]); err == nil {
+	if val, err := resource.ParseQuantity(annotations[VaultAgentCPUAnnotation]); err == nil {
 		vaultConfig.AgentCPULimit = val
-	} else if val, err := resource.ParseQuantity(annotations["vault.security.banzaicloud.io/vault-agent-cpu-limit"]); err == nil {
+	} else if val, err := resource.ParseQuantity(annotations[VaultAgentCPULimitAnnotation]); err == nil {
 		vaultConfig.AgentCPULimit = val
 	} else {
 		vaultConfig.AgentCPULimit = resource.MustParse("100m")
 	}
 
 	// This is done to preserve backwards compatibility with vault-agent-memory
-	if val, err := resource.ParseQuantity(annotations["vault.security.banzaicloud.io/vault-agent-memory"]); err == nil {
+	if val, err := resource.ParseQuantity(annotations[VaultAgentMemoryAnnotation]); err == nil {
 		vaultConfig.AgentMemoryLimit = val
-	} else if val, err := resource.ParseQuantity(annotations["vault.security.banzaicloud.io/vault-agent-memory-limit"]); err == nil {
+	} else if val, err := resource.ParseQuantity(annotations[VaultAgentMemoryLimitAnnotation]); err == nil {
 		vaultConfig.AgentMemoryLimit = val
 	} else {
 		vaultConfig.AgentMemoryLimit = resource.MustParse("128Mi")
 	}
 
-	if val, err := resource.ParseQuantity(annotations["vault.security.banzaicloud.io/vault-agent-cpu-request"]); err == nil {
+	if val, err := resource.ParseQuantity(annotations[VaultAgentCPURequestAnnotation]); err == nil {
 		vaultConfig.AgentCPURequest = val
 	} else {
 		vaultConfig.AgentCPURequest = resource.MustParse("100m")
 	}
 
-	if val, err := resource.ParseQuantity(annotations["vault.security.banzaicloud.io/vault-agent-memory-request"]); err == nil {
+	if val, err := resource.ParseQuantity(annotations[VaultAgentMemoryRequestAnnotation]); err == nil {
 		vaultConfig.AgentMemoryRequest = val
 	} else {
 		vaultConfig.AgentMemoryRequest = resource.MustParse("128Mi")
 	}
 
-	if val, ok := annotations["vault.security.banzaicloud.io/vault-agent-share-process-namespace"]; ok {
+	if val, ok := annotations[VaultAgentShareProcessNamespaceAnnotation]; ok {
 		vaultConfig.AgentShareProcessDefault = "found"
 		vaultConfig.AgentShareProcess, _ = strconv.ParseBool(val)
 	} else {
@@ -358,15 +358,15 @@ func parseVaultConfig(obj metav1.Object, ar *model.AdmissionReview) VaultConfig 
 		vaultConfig.AgentShareProcess = false
 	}
 
-	if val, ok := annotations["vault.security.banzaicloud.io/vault-env-from-path"]; ok {
+	if val, ok := annotations[VaultEnvFromPathAnnotation]; ok {
 		vaultConfig.VaultEnvFromPath = val
 	}
 
-	if val, ok := annotations["vault.security.banzaicloud.io/token-auth-mount"]; ok {
+	if val, ok := annotations[TokenAuthMountAnnotation]; ok {
 		vaultConfig.TokenAuthMount = val
 	}
 
-	if val, ok := annotations["vault.security.banzaicloud.io/vault-env-image"]; ok {
+	if val, ok := annotations[VaultEnvImageAnnotation]; ok {
 		vaultConfig.EnvImage = val
 	} else {
 		vaultConfig.EnvImage = viper.GetString("vault_env_image")
@@ -374,34 +374,34 @@ func parseVaultConfig(obj metav1.Object, ar *model.AdmissionReview) VaultConfig 
 
 	vaultConfig.EnvLogServer = viper.GetString("VAULT_ENV_LOG_SERVER")
 
-	if val, ok := annotations["vault.security.banzaicloud.io/vault-env-image-pull-policy"]; ok {
+	if val, ok := annotations[VaultEnvImagePullPolicyAnnotation]; ok {
 		vaultConfig.EnvImagePullPolicy = getPullPolicy(val)
 	} else {
 		vaultConfig.EnvImagePullPolicy = getPullPolicy(viper.GetString("vault_env_pull_policy"))
 	}
 
-	if val, ok := annotations["vault.security.banzaicloud.io/vault-image"]; ok {
+	if val, ok := annotations[VaultImageAnnotation]; ok {
 		vaultConfig.AgentImage = val
 	} else {
 		vaultConfig.AgentImage = viper.GetString("vault_image")
 	}
-	if val, ok := annotations["vault.security.banzaicloud.io/vault-image-pull-policy"]; ok {
+	if val, ok := annotations[VaultImagePullPolicyAnnotation]; ok {
 		vaultConfig.AgentImagePullPolicy = getPullPolicy(val)
 	} else {
 		vaultConfig.AgentImagePullPolicy = getPullPolicy(viper.GetString("vault_image_pull_policy"))
 	}
 
-	if val, ok := annotations["vault.security.banzaicloud.io/vault-agent-env-variables"]; ok {
+	if val, ok := annotations[VaultAgentEnvVariablesAnnotation]; ok {
 		vaultConfig.AgentEnvVariables = val
 	}
 
-	if val, ok := annotations["vault.security.banzaicloud.io/vault-namespace"]; ok {
+	if val, ok := annotations[VaultNamespaceAnnotation]; ok {
 		vaultConfig.VaultNamespace = val
 	} else {
 		vaultConfig.VaultNamespace = viper.GetString("VAULT_NAMESPACE")
 	}
 
-	if val, ok := annotations["vault.security.banzaicloud.io/vault-ct-inject-in-initcontainers"]; ok {
+	if val, ok := annotations[VaultConsuleTemplateInjectInInitcontainersAnnotation]; ok {
 		vaultConfig.CtInjectInInitcontainers, _ = strconv.ParseBool(val)
 	} else {
 		vaultConfig.CtInjectInInitcontainers = false
@@ -431,13 +431,13 @@ func parseVaultConfig(obj metav1.Object, ar *model.AdmissionReview) VaultConfig 
 		vaultConfig.EnvMemoryLimit = resource.MustParse("64Mi")
 	}
 
-	if val, ok := annotations["vault.security.banzaicloud.io/mutate-probes"]; ok {
+	if val, ok := annotations[MutateProbesAnnotation]; ok {
 		vaultConfig.MutateProbes, _ = strconv.ParseBool(val)
 	} else {
 		vaultConfig.MutateProbes = false
 	}
 
-	if val, ok := annotations["vault.security.banzaicloud.io/transit-batch-size"]; ok {
+	if val, ok := annotations[TransitBatchSizeAnnotation]; ok {
 		batchSize, _ := strconv.ParseInt(val, 10, 32)
 		vaultConfig.TransitBatchSize = int(batchSize)
 	} else {
