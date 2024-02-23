@@ -24,7 +24,7 @@ import (
 	"github.com/bank-vaults/internal/injector"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/bank-vaults/vault-secrets-webhook/common"
+	"github.com/bank-vaults/vault-secrets-webhook/pkg/common"
 )
 
 type dockerCredentials struct {

@@ -38,7 +38,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/bank-vaults/vault-secrets-webhook/common"
+	"github.com/bank-vaults/vault-secrets-webhook/pkg/common"
 )
 
 type MutatingWebhook struct {

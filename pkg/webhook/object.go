@@ -22,7 +22,7 @@ import (
 	"github.com/bank-vaults/internal/injector"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
-	"github.com/bank-vaults/vault-secrets-webhook/common"
+	"github.com/bank-vaults/vault-secrets-webhook/pkg/common"
 )
 
 type element interface {

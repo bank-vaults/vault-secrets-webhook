@@ -143,6 +143,11 @@ The following table lists the configurable parameters of the Helm chart.
 | `affinity` | object | `{}` | Node affinity settings for the pods. Check: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/ |
 | `topologySpreadConstraints` | object | `{}` | TopologySpreadConstraints to add for the pods. Check: https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/ |
 | `priorityClassName` | string | `""` | Assign a PriorityClassName to pods if set. Check: https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/ |
+| `livenessProbe` | object | `{"failureThreshold":3,"initialDelaySeconds":30,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":1}` | Liveness and readiness probes for the webhook container |
+| `readinessProbe.failureThreshold` | int | `3` |  |
+| `readinessProbe.periodSeconds` | int | `10` |  |
+| `readinessProbe.successThreshold` | int | `1` |  |
+| `readinessProbe.timeoutSeconds` | int | `1` |  |
 | `rbac.psp.enabled` | bool | `false` | Use pod security policy |
 | `rbac.authDelegatorRole.enabled` | bool | `false` | Bind `system:auth-delegator` ClusterRoleBinding to given `serviceAccount` |
 | `serviceAccount.create` | bool | `true` | Specifies whether a service account should be created |
