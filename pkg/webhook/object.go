@@ -21,6 +21,8 @@ import (
 	"emperror.dev/errors"
 	"github.com/bank-vaults/internal/injector"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+
+	"github.com/bank-vaults/vault-secrets-webhook/pkg/common"
 )
 
 type element interface {
@@ -89,7 +91,7 @@ func traverseObject(o interface{}, secretInjector *injector.SecretInjector) erro
 	for e := range iterator {
 		switch s := e.Get().(type) {
 		case string:
-			if hasVaultPrefix(s) {
+			if common.HasVaultPrefix(s) {
 				dataFromVault, err := secretInjector.GetDataFromVault(map[string]string{"data": s})
 				if err != nil {
 					return err

@@ -28,6 +28,8 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeVer "k8s.io/apimachinery/pkg/version"
+
+	"github.com/bank-vaults/vault-secrets-webhook/pkg/common"
 )
 
 const (
@@ -245,7 +247,7 @@ func (mw *MutatingWebhook) mutateContainers(ctx context.Context, containers []co
 		}
 
 		for _, env := range container.Env {
-			if hasVaultPrefix(env.Value) || injector.HasInlineVaultDelimiters(env.Value) {
+			if common.HasVaultPrefix(env.Value) || injector.HasInlineVaultDelimiters(env.Value) {
 				envVars = append(envVars, env)
 			}
 			if env.ValueFrom != nil {

@@ -23,6 +23,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/bank-vaults/vault-secrets-webhook/pkg/common"
 )
 
 // VaultConfig represents vault options
@@ -96,19 +98,19 @@ func parseVaultConfig(obj metav1.Object, ar *model.AdmissionReview) VaultConfig 
 
 	annotations := obj.GetAnnotations()
 
-	if val := annotations[MutateAnnotation]; val == "skip" {
+	if val := annotations[common.MutateAnnotation]; val == "skip" {
 		vaultConfig.Skip = true
 
 		return vaultConfig
 	}
 
-	if val, ok := annotations[VaultAddrAnnotation]; ok {
+	if val, ok := annotations[common.VaultAddrAnnotation]; ok {
 		vaultConfig.Addr = val
 	} else {
 		vaultConfig.Addr = viper.GetString("vault_addr")
 	}
 
-	if val, ok := annotations[VaultRoleAnnotation]; ok {
+	if val, ok := annotations[common.VaultRoleAnnotation]; ok {
 		vaultConfig.Role = val
 	} else {
 		if val := viper.GetString("vault_role"); val != "" {
@@ -123,68 +125,68 @@ func parseVaultConfig(obj metav1.Object, ar *model.AdmissionReview) VaultConfig 
 		}
 	}
 
-	if val, ok := annotations[VaultAuthMethodAnnotation]; ok {
+	if val, ok := annotations[common.VaultAuthMethodAnnotation]; ok {
 		vaultConfig.AuthMethod = val
 	} else {
 		vaultConfig.AuthMethod = viper.GetString("vault_auth_method")
 	}
 
-	if val, ok := annotations[VaultPathAnnotation]; ok {
+	if val, ok := annotations[common.VaultPathAnnotation]; ok {
 		vaultConfig.Path = val
 	} else {
 		vaultConfig.Path = viper.GetString("vault_path")
 	}
 
 	// TODO: Check for flag to verify we want to use namespace-local SAs instead of the vault webhook namespaces SA
-	if val, ok := annotations[VaultServiceaccountAnnotation]; ok {
+	if val, ok := annotations[common.VaultServiceaccountAnnotation]; ok {
 		vaultConfig.VaultServiceAccount = val
 	} else {
 		vaultConfig.VaultServiceAccount = viper.GetString("vault_serviceaccount")
 	}
 
-	if val, ok := annotations[VaultSkipVerifyAnnotation]; ok {
+	if val, ok := annotations[common.VaultSkipVerifyAnnotation]; ok {
 		vaultConfig.SkipVerify, _ = strconv.ParseBool(val)
 	} else {
 		vaultConfig.SkipVerify = viper.GetBool("vault_skip_verify")
 	}
 
-	if val, ok := annotations[VaultTLSSecretAnnotation]; ok {
+	if val, ok := annotations[common.VaultTLSSecretAnnotation]; ok {
 		vaultConfig.TLSSecret = val
 	} else {
 		vaultConfig.TLSSecret = viper.GetString("vault_tls_secret")
 	}
 
-	if val, ok := annotations[VaultClientTimeoutAnnotation]; ok {
+	if val, ok := annotations[common.VaultClientTimeoutAnnotation]; ok {
 		vaultConfig.ClientTimeout, _ = time.ParseDuration(val)
 	} else {
 		vaultConfig.ClientTimeout, _ = time.ParseDuration(viper.GetString("vault_client_timeout"))
 	}
 
-	if val, ok := annotations[VaultAgentAnnotation]; ok {
+	if val, ok := annotations[common.VaultAgentAnnotation]; ok {
 		vaultConfig.UseAgent, _ = strconv.ParseBool(val)
 	} else {
 		vaultConfig.UseAgent, _ = strconv.ParseBool(viper.GetString("vault_agent"))
 	}
 
-	if val, ok := annotations[VaultEnvDaemonAnnotation]; ok {
+	if val, ok := annotations[common.VaultEnvDaemonAnnotation]; ok {
 		vaultConfig.VaultEnvDaemon, _ = strconv.ParseBool(val)
 	} else {
 		vaultConfig.VaultEnvDaemon, _ = strconv.ParseBool(viper.GetString("vault_env_daemon"))
 	}
 
-	if val, ok := annotations[VaultEnvDelayAnnotation]; ok {
+	if val, ok := annotations[common.VaultEnvDelayAnnotation]; ok {
 		vaultConfig.VaultEnvDelay, _ = time.ParseDuration(val)
 	} else {
 		vaultConfig.VaultEnvDelay, _ = time.ParseDuration(viper.GetString("vault_env_delay"))
 	}
 
-	if val, ok := annotations[VaultConsulTemplateConfigmapAnnotation]; ok {
+	if val, ok := annotations[common.VaultConsulTemplateConfigmapAnnotation]; ok {
 		vaultConfig.CtConfigMap = val
 	} else {
 		vaultConfig.CtConfigMap = ""
 	}
 
-	if val, ok := annotations[ServiceAccountTokenVolumeNameAnnotation]; ok {
+	if val, ok := annotations[common.ServiceAccountTokenVolumeNameAnnotation]; ok {
 		vaultConfig.ServiceAccountTokenVolumeName = val
 	} else if viper.GetString("SERVICE_ACCOUNT_TOKEN_VOLUME_NAME") != "" {
 		vaultConfig.ServiceAccountTokenVolumeName = viper.GetString("SERVICE_ACCOUNT_TOKEN_VOLUME_NAME")
@@ -192,55 +194,55 @@ func parseVaultConfig(obj metav1.Object, ar *model.AdmissionReview) VaultConfig 
 		vaultConfig.ServiceAccountTokenVolumeName = "/var/run/secrets/kubernetes.io/serviceaccount"
 	}
 
-	if val, ok := annotations[VaultConsulTemplateImageAnnotation]; ok {
+	if val, ok := annotations[common.VaultConsulTemplateImageAnnotation]; ok {
 		vaultConfig.CtImage = val
 	} else {
 		vaultConfig.CtImage = viper.GetString("vault_ct_image")
 	}
 
-	if val, ok := annotations[VaultIgnoreMissingSecretsAnnotation]; ok {
+	if val, ok := annotations[common.VaultIgnoreMissingSecretsAnnotation]; ok {
 		vaultConfig.IgnoreMissingSecrets = val
 	} else {
 		vaultConfig.IgnoreMissingSecrets = viper.GetString("vault_ignore_missing_secrets")
 	}
-	if val, ok := annotations[VaultEnvPassthroughAnnotation]; ok {
+	if val, ok := annotations[common.VaultEnvPassthroughAnnotation]; ok {
 		vaultConfig.VaultEnvPassThrough = val
 	} else {
 		vaultConfig.VaultEnvPassThrough = viper.GetString("vault_env_passthrough")
 	}
-	if val, ok := annotations[VaultConfigfilePathAnnotation]; ok {
+	if val, ok := annotations[common.VaultConfigfilePathAnnotation]; ok {
 		vaultConfig.ConfigfilePath = val
-	} else if val, ok := annotations[VaultConsuleTemplateSecretsMountPathAnnotation]; ok {
+	} else if val, ok := annotations[common.VaultConsuleTemplateSecretsMountPathAnnotation]; ok {
 		vaultConfig.ConfigfilePath = val
 	} else {
 		vaultConfig.ConfigfilePath = "/vault/secrets"
 	}
 
-	if val, ok := annotations[VaultConsulTemplatePullPolicyAnnotation]; ok {
+	if val, ok := annotations[common.VaultConsulTemplatePullPolicyAnnotation]; ok {
 		vaultConfig.CtImagePullPolicy = getPullPolicy(val)
 	} else {
 		vaultConfig.CtImagePullPolicy = getPullPolicy(viper.GetString("vault_ct_pull_policy"))
 	}
 
-	if val, ok := annotations[VaultConsulTemplateOnceAnnotation]; ok {
+	if val, ok := annotations[common.VaultConsulTemplateOnceAnnotation]; ok {
 		vaultConfig.CtOnce, _ = strconv.ParseBool(val)
 	} else {
 		vaultConfig.CtOnce = false
 	}
 
-	if val, err := resource.ParseQuantity(annotations[VaultConsulTemplateCPUAnnotation]); err == nil {
+	if val, err := resource.ParseQuantity(annotations[common.VaultConsulTemplateCPUAnnotation]); err == nil {
 		vaultConfig.CtCPU = val
 	} else {
 		vaultConfig.CtCPU = resource.MustParse("100m")
 	}
 
-	if val, err := resource.ParseQuantity(annotations[VaultConsulTemplateMemoryAnnotation]); err == nil {
+	if val, err := resource.ParseQuantity(annotations[common.VaultConsulTemplateMemoryAnnotation]); err == nil {
 		vaultConfig.CtMemory = val
 	} else {
 		vaultConfig.CtMemory = resource.MustParse("128Mi")
 	}
 
-	if val, ok := annotations[VaultConsulTemplateShareProcessNamespaceAnnotation]; ok {
+	if val, ok := annotations[common.VaultConsulTemplateShareProcessNamespaceAnnotation]; ok {
 		vaultConfig.CtShareProcessDefault = "found"
 		vaultConfig.CtShareProcess, _ = strconv.ParseBool(val)
 	} else {
@@ -248,109 +250,109 @@ func parseVaultConfig(obj metav1.Object, ar *model.AdmissionReview) VaultConfig 
 		vaultConfig.CtShareProcess = false
 	}
 
-	if val, ok := annotations[PSPAllowPrivilegeEscalationAnnotation]; ok {
+	if val, ok := annotations[common.PSPAllowPrivilegeEscalationAnnotation]; ok {
 		vaultConfig.PspAllowPrivilegeEscalation, _ = strconv.ParseBool(val)
 	} else {
 		vaultConfig.PspAllowPrivilegeEscalation, _ = strconv.ParseBool(viper.GetString("psp_allow_privilege_escalation"))
 	}
 
-	if val, ok := annotations[RunAsNonRootAnnotation]; ok {
+	if val, ok := annotations[common.RunAsNonRootAnnotation]; ok {
 		vaultConfig.RunAsNonRoot, _ = strconv.ParseBool(val)
 	} else {
 		vaultConfig.RunAsNonRoot, _ = strconv.ParseBool(viper.GetString("run_as_non_root"))
 	}
 
-	if val, ok := annotations[RunAsUserAnnotation]; ok {
+	if val, ok := annotations[common.RunAsUserAnnotation]; ok {
 		vaultConfig.RunAsUser, _ = strconv.ParseInt(val, 10, 64)
 	} else {
 		vaultConfig.RunAsUser, _ = strconv.ParseInt(viper.GetString("run_as_user"), 0, 64)
 	}
 
-	if val, ok := annotations[RunAsGroupAnnotation]; ok {
+	if val, ok := annotations[common.RunAsGroupAnnotation]; ok {
 		vaultConfig.RunAsGroup, _ = strconv.ParseInt(val, 10, 64)
 	} else {
 		vaultConfig.RunAsGroup, _ = strconv.ParseInt(viper.GetString("run_as_group"), 0, 64)
 	}
 
-	if val, ok := annotations[ReadOnlyRootFsAnnotation]; ok {
+	if val, ok := annotations[common.ReadOnlyRootFsAnnotation]; ok {
 		vaultConfig.ReadOnlyRootFilesystem, _ = strconv.ParseBool(val)
 	} else {
 		vaultConfig.ReadOnlyRootFilesystem, _ = strconv.ParseBool(viper.GetString("readonly_root_fs"))
 	}
 
-	if val, ok := annotations[RegistrySkipVerifyAnnotation]; ok {
+	if val, ok := annotations[common.RegistrySkipVerifyAnnotation]; ok {
 		vaultConfig.RegistrySkipVerify, _ = strconv.ParseBool(val)
 	} else {
 		vaultConfig.RegistrySkipVerify, _ = strconv.ParseBool(viper.GetString("registry_skip_verify"))
 	}
 
-	if val, ok := annotations[LogLevelAnnotation]; ok {
+	if val, ok := annotations[common.LogLevelAnnotation]; ok {
 		vaultConfig.LogLevel = val
 	} else {
 		vaultConfig.LogLevel = viper.GetString("log_level")
 	}
 
-	if val, ok := annotations[EnableJSONLogAnnotation]; ok {
+	if val, ok := annotations[common.EnableJSONLogAnnotation]; ok {
 		vaultConfig.EnableJSONLog = val
 	} else {
 		vaultConfig.EnableJSONLog = viper.GetString("enable_json_log")
 	}
 
-	if val, ok := annotations[TransitKeyIDAnnotation]; ok {
+	if val, ok := annotations[common.TransitKeyIDAnnotation]; ok {
 		vaultConfig.TransitKeyID = val
 	} else {
 		vaultConfig.TransitKeyID = viper.GetString("transit_key_id")
 	}
 
-	if val, ok := annotations[TransitPathAnnotation]; ok {
+	if val, ok := annotations[common.TransitPathAnnotation]; ok {
 		vaultConfig.TransitPath = val
 	} else {
 		vaultConfig.TransitPath = viper.GetString("transit_path")
 	}
 
-	if val, ok := annotations[VaultAgentConfigmapAnnotation]; ok {
+	if val, ok := annotations[common.VaultAgentConfigmapAnnotation]; ok {
 		vaultConfig.AgentConfigMap = val
 	} else {
 		vaultConfig.AgentConfigMap = ""
 	}
 
-	if val, ok := annotations[VaultAgentOnceAnnotation]; ok {
+	if val, ok := annotations[common.VaultAgentOnceAnnotation]; ok {
 		vaultConfig.AgentOnce, _ = strconv.ParseBool(val)
 	} else {
 		vaultConfig.AgentOnce = false
 	}
 
 	// This is done to preserve backwards compatibility with vault-agent-cpu
-	if val, err := resource.ParseQuantity(annotations[VaultAgentCPUAnnotation]); err == nil {
+	if val, err := resource.ParseQuantity(annotations[common.VaultAgentCPUAnnotation]); err == nil {
 		vaultConfig.AgentCPULimit = val
-	} else if val, err := resource.ParseQuantity(annotations[VaultAgentCPULimitAnnotation]); err == nil {
+	} else if val, err := resource.ParseQuantity(annotations[common.VaultAgentCPULimitAnnotation]); err == nil {
 		vaultConfig.AgentCPULimit = val
 	} else {
 		vaultConfig.AgentCPULimit = resource.MustParse("100m")
 	}
 
 	// This is done to preserve backwards compatibility with vault-agent-memory
-	if val, err := resource.ParseQuantity(annotations[VaultAgentMemoryAnnotation]); err == nil {
+	if val, err := resource.ParseQuantity(annotations[common.VaultAgentMemoryAnnotation]); err == nil {
 		vaultConfig.AgentMemoryLimit = val
-	} else if val, err := resource.ParseQuantity(annotations[VaultAgentMemoryLimitAnnotation]); err == nil {
+	} else if val, err := resource.ParseQuantity(annotations[common.VaultAgentMemoryLimitAnnotation]); err == nil {
 		vaultConfig.AgentMemoryLimit = val
 	} else {
 		vaultConfig.AgentMemoryLimit = resource.MustParse("128Mi")
 	}
 
-	if val, err := resource.ParseQuantity(annotations[VaultAgentCPURequestAnnotation]); err == nil {
+	if val, err := resource.ParseQuantity(annotations[common.VaultAgentCPURequestAnnotation]); err == nil {
 		vaultConfig.AgentCPURequest = val
 	} else {
 		vaultConfig.AgentCPURequest = resource.MustParse("100m")
 	}
 
-	if val, err := resource.ParseQuantity(annotations[VaultAgentMemoryRequestAnnotation]); err == nil {
+	if val, err := resource.ParseQuantity(annotations[common.VaultAgentMemoryRequestAnnotation]); err == nil {
 		vaultConfig.AgentMemoryRequest = val
 	} else {
 		vaultConfig.AgentMemoryRequest = resource.MustParse("128Mi")
 	}
 
-	if val, ok := annotations[VaultAgentShareProcessNamespaceAnnotation]; ok {
+	if val, ok := annotations[common.VaultAgentShareProcessNamespaceAnnotation]; ok {
 		vaultConfig.AgentShareProcessDefault = "found"
 		vaultConfig.AgentShareProcess, _ = strconv.ParseBool(val)
 	} else {
@@ -358,15 +360,15 @@ func parseVaultConfig(obj metav1.Object, ar *model.AdmissionReview) VaultConfig 
 		vaultConfig.AgentShareProcess = false
 	}
 
-	if val, ok := annotations[VaultEnvFromPathAnnotation]; ok {
+	if val, ok := annotations[common.VaultEnvFromPathAnnotation]; ok {
 		vaultConfig.VaultEnvFromPath = val
 	}
 
-	if val, ok := annotations[TokenAuthMountAnnotation]; ok {
+	if val, ok := annotations[common.TokenAuthMountAnnotation]; ok {
 		vaultConfig.TokenAuthMount = val
 	}
 
-	if val, ok := annotations[VaultEnvImageAnnotation]; ok {
+	if val, ok := annotations[common.VaultEnvImageAnnotation]; ok {
 		vaultConfig.EnvImage = val
 	} else {
 		vaultConfig.EnvImage = viper.GetString("vault_env_image")
@@ -374,34 +376,34 @@ func parseVaultConfig(obj metav1.Object, ar *model.AdmissionReview) VaultConfig 
 
 	vaultConfig.EnvLogServer = viper.GetString("VAULT_ENV_LOG_SERVER")
 
-	if val, ok := annotations[VaultEnvImagePullPolicyAnnotation]; ok {
+	if val, ok := annotations[common.VaultEnvImagePullPolicyAnnotation]; ok {
 		vaultConfig.EnvImagePullPolicy = getPullPolicy(val)
 	} else {
 		vaultConfig.EnvImagePullPolicy = getPullPolicy(viper.GetString("vault_env_pull_policy"))
 	}
 
-	if val, ok := annotations[VaultImageAnnotation]; ok {
+	if val, ok := annotations[common.VaultImageAnnotation]; ok {
 		vaultConfig.AgentImage = val
 	} else {
 		vaultConfig.AgentImage = viper.GetString("vault_image")
 	}
-	if val, ok := annotations[VaultImagePullPolicyAnnotation]; ok {
+	if val, ok := annotations[common.VaultImagePullPolicyAnnotation]; ok {
 		vaultConfig.AgentImagePullPolicy = getPullPolicy(val)
 	} else {
 		vaultConfig.AgentImagePullPolicy = getPullPolicy(viper.GetString("vault_image_pull_policy"))
 	}
 
-	if val, ok := annotations[VaultAgentEnvVariablesAnnotation]; ok {
+	if val, ok := annotations[common.VaultAgentEnvVariablesAnnotation]; ok {
 		vaultConfig.AgentEnvVariables = val
 	}
 
-	if val, ok := annotations[VaultNamespaceAnnotation]; ok {
+	if val, ok := annotations[common.VaultNamespaceAnnotation]; ok {
 		vaultConfig.VaultNamespace = val
 	} else {
 		vaultConfig.VaultNamespace = viper.GetString("VAULT_NAMESPACE")
 	}
 
-	if val, ok := annotations[VaultConsuleTemplateInjectInInitcontainersAnnotation]; ok {
+	if val, ok := annotations[common.VaultConsuleTemplateInjectInInitcontainersAnnotation]; ok {
 		vaultConfig.CtInjectInInitcontainers, _ = strconv.ParseBool(val)
 	} else {
 		vaultConfig.CtInjectInInitcontainers = false
@@ -431,13 +433,13 @@ func parseVaultConfig(obj metav1.Object, ar *model.AdmissionReview) VaultConfig 
 		vaultConfig.EnvMemoryLimit = resource.MustParse("64Mi")
 	}
 
-	if val, ok := annotations[MutateProbesAnnotation]; ok {
+	if val, ok := annotations[common.MutateProbesAnnotation]; ok {
 		vaultConfig.MutateProbes, _ = strconv.ParseBool(val)
 	} else {
 		vaultConfig.MutateProbes = false
 	}
 
-	if val, ok := annotations[TransitBatchSizeAnnotation]; ok {
+	if val, ok := annotations[common.TransitBatchSizeAnnotation]; ok {
 		batchSize, _ := strconv.ParseInt(val, 10, 32)
 		vaultConfig.TransitBatchSize = int(batchSize)
 	} else {

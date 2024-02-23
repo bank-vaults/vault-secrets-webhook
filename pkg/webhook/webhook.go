@@ -37,6 +37,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/kubernetes"
+
+	"github.com/bank-vaults/vault-secrets-webhook/pkg/common"
 )
 
 type MutatingWebhook struct {
@@ -119,7 +121,7 @@ func (mw *MutatingWebhook) lookForEnvFrom(envFrom []corev1.EnvFromSource, ns str
 				return envVars, err
 			}
 			for key, value := range data {
-				if hasVaultPrefix(value) || injector.HasInlineVaultDelimiters(value) {
+				if common.HasVaultPrefix(value) || injector.HasInlineVaultDelimiters(value) {
 					envFromCM := corev1.EnvVar{
 						Name:  key,
 						Value: value,
@@ -139,7 +141,7 @@ func (mw *MutatingWebhook) lookForEnvFrom(envFrom []corev1.EnvFromSource, ns str
 			}
 			for name, v := range data {
 				value := string(v)
-				if hasVaultPrefix(value) || injector.HasInlineVaultDelimiters(value) {
+				if common.HasVaultPrefix(value) || injector.HasInlineVaultDelimiters(value) {
 					envFromSec := corev1.EnvVar{
 						Name:  name,
 						Value: value,
@@ -162,7 +164,7 @@ func (mw *MutatingWebhook) lookForValueFrom(env corev1.EnvVar, ns string) (*core
 			return nil, err
 		}
 		value := data[env.ValueFrom.ConfigMapKeyRef.Key]
-		if hasVaultPrefix(value) || injector.HasInlineVaultDelimiters(value) {
+		if common.HasVaultPrefix(value) || injector.HasInlineVaultDelimiters(value) {
 			fromCM := corev1.EnvVar{
 				Name:  env.Name,
 				Value: value,
@@ -179,7 +181,7 @@ func (mw *MutatingWebhook) lookForValueFrom(env corev1.EnvVar, ns string) (*core
 			return nil, err
 		}
 		value := string(data[env.ValueFrom.SecretKeyRef.Key])
-		if hasVaultPrefix(value) || injector.HasInlineVaultDelimiters(value) {
+		if common.HasVaultPrefix(value) || injector.HasInlineVaultDelimiters(value) {
 			fromSecret := corev1.EnvVar{
 				Name:  env.Name,
 				Value: value,
