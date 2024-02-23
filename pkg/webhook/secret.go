@@ -253,7 +253,6 @@ func isJSONKey(auth string) bool {
 	return false
 }
 
-// hasVaultPrefix checks if the given string is a valid vault path
 func validVaultPath(auth string) bool {
 	re := regexp.MustCompile(`^(vault:secret)(\/\w+)+(#.+)`)
 	match := re.MatchString(auth)
