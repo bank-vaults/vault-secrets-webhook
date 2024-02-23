@@ -23,6 +23,8 @@ import (
 	"emperror.dev/errors"
 	"github.com/bank-vaults/internal/injector"
 	corev1 "k8s.io/api/core/v1"
+
+	"github.com/bank-vaults/vault-secrets-webhook/common"
 )
 
 type dockerCredentials struct {
@@ -66,11 +68,11 @@ func secretNeedsMutation(secret *corev1.Secret) (bool, error) {
 				}
 
 				auth := string(authBytes)
-				if hasVaultPrefix(auth) {
+				if common.HasVaultPrefix(auth) {
 					return true, nil
 				}
 			}
-		} else if hasVaultPrefix(string(value)) {
+		} else if common.HasVaultPrefix(string(value)) {
 			return true, nil
 		} else if injector.HasInlineVaultDelimiters(string(value)) {
 			return true, nil
@@ -134,7 +136,7 @@ func (mw *MutatingWebhook) mutateDockerCreds(secret *corev1.Secret, dc *dockerCr
 		}
 
 		auth := string(authBytes)
-		if hasVaultPrefix(auth) {
+		if common.HasVaultPrefix(auth) {
 			split := strings.Split(auth, ":")
 			if len(split) != 4 {
 				return errors.New("splitting auth credentials failed")

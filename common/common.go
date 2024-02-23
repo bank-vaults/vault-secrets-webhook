@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package webhook
+package common
 
 import (
 	"strings"
@@ -94,6 +94,6 @@ const (
 	VaultEnvDelayAnnotation = "vault.security.banzaicloud.io/vault-env-delay"
 )
 
-func hasVaultPrefix(value string) bool {
+func HasVaultPrefix(value string) bool {
 	return strings.HasPrefix(value, "vault:") || strings.HasPrefix(value, ">>vault:")
 }
