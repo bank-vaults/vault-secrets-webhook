@@ -44,7 +44,7 @@ import (
 )
 
 // Upgrade this when a new version is released
-const vaultOperatorVersion = "1.20.0"
+const vaultOperatorVersion = "1.22.0"
 
 var testenv env.Environment
 
