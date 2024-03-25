@@ -21,7 +21,7 @@ import (
 	"strings"
 
 	"emperror.dev/errors"
-	"github.com/bank-vaults/internal/injector"
+	injector "github.com/bank-vaults/internal/pkg/vaultinjector"
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/bank-vaults/vault-secrets-webhook/pkg/common"
