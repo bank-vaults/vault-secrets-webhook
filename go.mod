@@ -1,6 +1,7 @@
 module github.com/bank-vaults/vault-secrets-webhook
 
 go 1.21.1
+toolchain go1.22.1
 
 require (
 	emperror.dev/errors v0.8.1
@@ -14,7 +15,7 @@ require (
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/prometheus/client_golang v1.19.0
 	github.com/samber/slog-multi v1.0.2
-	github.com/slok/kubewebhook/v2 v2.5.0
+	github.com/slok/kubewebhook/v2 v2.6.0
 	github.com/spf13/viper v1.18.2
 	github.com/stretchr/testify v1.9.0
 	k8s.io/api v0.29.3
@@ -186,8 +187,7 @@ require (
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
-	gomodules.xyz/jsonpatch/v3 v3.0.1 // indirect
-	gomodules.xyz/orderedmap v0.1.0 // indirect
+	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
 	google.golang.org/api v0.169.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/genproto v0.0.0-20240311173647-c811ad7063a7 // indirect
