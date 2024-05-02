@@ -1,4 +1,4 @@
-{{- if .Values.certificate.useCertManager }}
+{{- if and (.Values.certificate.useCertManager) (not .Values.certificate.servingCertificate) }}
 ---
 # Create a selfsigned Issuer, in order to create a root CA certificate for
 # signing webhook serving certificates
@@ -54,8 +54,6 @@ spec:
   ca:
     secretName: {{ include "vault-secrets-webhook.rootCACertificate" . }}
 
-{{- end }}
-{{- if or .Values.certificate.useCertManager .Values.certificate.servingCertificate }}
 ---
 
 # Finally, generate a serving certificate for the webhook to use
