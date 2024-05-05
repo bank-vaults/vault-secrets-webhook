@@ -1,6 +1,7 @@
 module github.com/bank-vaults/vault-secrets-webhook
 
 go 1.21.1
+toolchain go1.22.2
 
 require (
 	emperror.dev/errors v0.8.1
@@ -17,11 +18,11 @@ require (
 	github.com/slok/kubewebhook/v2 v2.5.0
 	github.com/spf13/viper v1.18.2
 	github.com/stretchr/testify v1.9.0
-	k8s.io/api v0.29.3
-	k8s.io/apimachinery v0.29.3
-	k8s.io/client-go v0.29.3
+	k8s.io/api v0.30.0
+	k8s.io/apimachinery v0.30.0
+	k8s.io/client-go v0.30.0
 	k8s.io/klog/v2 v2.120.1
-	sigs.k8s.io/controller-runtime v0.17.3
+	sigs.k8s.io/controller-runtime v0.18.1
 	sigs.k8s.io/e2e-framework v0.3.0
 )
 
@@ -87,7 +88,7 @@ require (
 	github.com/docker/docker-credential-helpers v0.7.0 // indirect
 	github.com/emicklei/go-restful/v3 v3.11.0 // indirect
 	github.com/evanphx/json-patch v5.6.0+incompatible // indirect
-	github.com/evanphx/json-patch/v5 v5.8.0 // indirect
+	github.com/evanphx/json-patch/v5 v5.9.0 // indirect
 	github.com/fatih/color v1.16.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/go-jose/go-jose/v4 v4.0.1 // indirect
@@ -199,7 +200,7 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/kube-openapi v0.0.0-20231010175941-2dd684a91f00 // indirect
+	k8s.io/kube-openapi v0.0.0-20240228011516-70dd3763d340 // indirect
 	k8s.io/utils v0.0.0-20230726121419-3b25d923346b // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
