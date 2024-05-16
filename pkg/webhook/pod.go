@@ -305,6 +305,12 @@ func (mw *MutatingWebhook) mutateContainers(ctx context.Context, containers []co
 				container.ReadinessProbe.Exec.Command = []string{"/vault/vault-env"}
 				container.ReadinessProbe.Exec.Command = append(container.ReadinessProbe.Exec.Command, rProbeCmd...)
 			}
+			// mutate StartupProbe
+			if container.StartupProbe != nil && container.StartupProbe.Exec != nil {
+				sProbeCmd := container.StartupProbe.Exec.Command
+				container.StartupProbe.Exec.Command = []string{"/vault/vault-env"}
+				container.StartupProbe.Exec.Command = append(container.StartupProbe.Exec.Command, sProbeCmd...)
+			}
 		}
 
 		container.VolumeMounts = append(container.VolumeMounts, []corev1.VolumeMount{
