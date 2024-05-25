@@ -224,7 +224,7 @@ func Test_mutatingWebhook_mutateContainers(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "Will mutate container with probes",
+			name: "Will mutate container with liveness probe",
 			fields: fields{
 				k8sClient: fake.NewSimpleClientset(),
 				registry: &MockRegistry{
@@ -265,6 +265,136 @@ func Test_mutatingWebhook_mutateContainers(t *testing.T) {
 					Args:         []string{"/bin/bash"},
 					VolumeMounts: []corev1.VolumeMount{{Name: "vault-env", MountPath: "/vault/"}},
 					LivenessProbe: &corev1.Probe{
+						ProbeHandler: corev1.ProbeHandler{
+							Exec: &corev1.ExecAction{
+								Command: []string{"/vault/vault-env", "/bin/bash"},
+							},
+						},
+					},
+					Env: []corev1.EnvVar{
+						{Name: "myvar", Value: "vault:secrets"},
+						{Name: "VAULT_ADDR", Value: ""},
+						{Name: "VAULT_SKIP_VERIFY", Value: "false"},
+						{Name: "VAULT_AUTH_METHOD", Value: ""},
+						{Name: "VAULT_PATH", Value: ""},
+						{Name: "VAULT_ROLE", Value: ""},
+						{Name: "VAULT_IGNORE_MISSING_SECRETS", Value: ""},
+						{Name: "VAULT_ENV_PASSTHROUGH", Value: ""},
+						{Name: "VAULT_JSON_LOG", Value: ""},
+						{Name: "VAULT_CLIENT_TIMEOUT", Value: "0s"},
+					},
+				},
+			},
+			mutated: true,
+			wantErr: false,
+		},
+		{
+			name: "Will mutate container with readiness probe",
+			fields: fields{
+				k8sClient: fake.NewSimpleClientset(),
+				registry: &MockRegistry{
+					Image: v1.Config{},
+				},
+			},
+			args: args{
+				containers: []corev1.Container{
+					{
+						Name:    "MyContainer",
+						Image:   "myimage",
+						Command: []string{"/bin/bash"},
+						Args:    nil,
+						ReadinessProbe: &corev1.Probe{
+							ProbeHandler: corev1.ProbeHandler{
+								Exec: &corev1.ExecAction{
+									Command: []string{"/bin/bash"},
+								},
+							},
+						},
+						Env: []corev1.EnvVar{
+							{
+								Name:  "myvar",
+								Value: "vault:secrets",
+							},
+						},
+					},
+				},
+				vaultConfig: VaultConfig{
+					MutateProbes: true,
+				},
+			},
+			wantedContainers: []corev1.Container{
+				{
+					Name:         "MyContainer",
+					Image:        "myimage",
+					Command:      []string{"/vault/vault-env"},
+					Args:         []string{"/bin/bash"},
+					VolumeMounts: []corev1.VolumeMount{{Name: "vault-env", MountPath: "/vault/"}},
+					ReadinessProbe: &corev1.Probe{
+						ProbeHandler: corev1.ProbeHandler{
+							Exec: &corev1.ExecAction{
+								Command: []string{"/vault/vault-env", "/bin/bash"},
+							},
+						},
+					},
+					Env: []corev1.EnvVar{
+						{Name: "myvar", Value: "vault:secrets"},
+						{Name: "VAULT_ADDR", Value: ""},
+						{Name: "VAULT_SKIP_VERIFY", Value: "false"},
+						{Name: "VAULT_AUTH_METHOD", Value: ""},
+						{Name: "VAULT_PATH", Value: ""},
+						{Name: "VAULT_ROLE", Value: ""},
+						{Name: "VAULT_IGNORE_MISSING_SECRETS", Value: ""},
+						{Name: "VAULT_ENV_PASSTHROUGH", Value: ""},
+						{Name: "VAULT_JSON_LOG", Value: ""},
+						{Name: "VAULT_CLIENT_TIMEOUT", Value: "0s"},
+					},
+				},
+			},
+			mutated: true,
+			wantErr: false,
+		},
+		{
+			name: "Will mutate container with startup probe",
+			fields: fields{
+				k8sClient: fake.NewSimpleClientset(),
+				registry: &MockRegistry{
+					Image: v1.Config{},
+				},
+			},
+			args: args{
+				containers: []corev1.Container{
+					{
+						Name:    "MyContainer",
+						Image:   "myimage",
+						Command: []string{"/bin/bash"},
+						Args:    nil,
+						StartupProbe: &corev1.Probe{
+							ProbeHandler: corev1.ProbeHandler{
+								Exec: &corev1.ExecAction{
+									Command: []string{"/bin/bash"},
+								},
+							},
+						},
+						Env: []corev1.EnvVar{
+							{
+								Name:  "myvar",
+								Value: "vault:secrets",
+							},
+						},
+					},
+				},
+				vaultConfig: VaultConfig{
+					MutateProbes: true,
+				},
+			},
+			wantedContainers: []corev1.Container{
+				{
+					Name:         "MyContainer",
+					Image:        "myimage",
+					Command:      []string{"/vault/vault-env"},
+					Args:         []string{"/bin/bash"},
+					VolumeMounts: []corev1.VolumeMount{{Name: "vault-env", MountPath: "/vault/"}},
+					StartupProbe: &corev1.Probe{
 						ProbeHandler: corev1.ProbeHandler{
 							Exec: &corev1.ExecAction{
 								Command: []string{"/vault/vault-env", "/bin/bash"},
