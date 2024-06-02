@@ -15,7 +15,7 @@ require (
 	github.com/prometheus/client_golang v1.19.1
 	github.com/samber/slog-multi v1.0.3
 	github.com/slok/kubewebhook/v2 v2.6.0
-	github.com/spf13/viper v1.18.2
+	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.9.0
 	k8s.io/api v0.30.1
 	k8s.io/apimachinery v0.30.1
