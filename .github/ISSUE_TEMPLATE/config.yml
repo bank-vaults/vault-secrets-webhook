@@ -5,9 +5,9 @@ contact_links:
     about: Suggest an improvement to the documentation
 
   - name: 📚 Documentation
-    url: https://bank-vaults.dev/docs/mutating-webhook/
+    url: https://bank-vaults.dev/docs/mutating-webhook
     about: Check the documentation for help
 
   - name: 💬 Slack channel
-    url: https://eti.cisco.com/slack
+    url: https://outshift.slack.com/messages/bank-vaults
     about: Please ask and answer questions here
