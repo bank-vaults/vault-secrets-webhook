@@ -1,6 +1,6 @@
 module github.com/bank-vaults/vault-secrets-webhook
 
-go 1.22.2
+go 1.22.3
 
 require (
 	emperror.dev/errors v0.8.1
