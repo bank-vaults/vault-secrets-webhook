@@ -5,7 +5,7 @@ spec:
   namespace: vault-operator
   chart:
     name: oci://ghcr.io/bank-vaults/helm-charts/vault-operator
-    version: "1.22.0"
+    version: "1.22.2"
 
 ---
 kind: Deploy
