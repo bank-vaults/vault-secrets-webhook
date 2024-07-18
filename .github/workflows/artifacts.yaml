@@ -202,6 +202,9 @@ jobs:
         with:
           version: v3.12.0
 
+      - name: Set up Cosign
+        uses: sigstore/cosign-installer@59acb6260d9c0ba8f4a2f9d9b48431a222b68e20 # v3.5.0
+
       - name: Set chart name
         id: chart-name
         run: echo "value=${{ github.event.repository.name }}" >> "$GITHUB_OUTPUT"
@@ -236,6 +239,13 @@ jobs:
         run: |
           helm package deploy/charts/${{ steps.chart-name.outputs.value }} --version ${{ steps.version.outputs.value }} --app-version ${{ steps.raw-version.outputs.value }}
           echo "package=${{ steps.chart-name.outputs.value }}-${{ steps.version.outputs.value }}.tgz" >> "$GITHUB_OUTPUT"
+
+      - name: Sign chart with GitHub OIDC Token
+        if: ${{ inputs.publish && github.repository_owner == 'bank-vaults' }} # Check if the workflow is called by the same GitHub organization
+        env:
+          PACKAGE: ${{ steps.build.outputs.package }}
+        run: |
+          cosign sign-blob --yes $PACKAGE
 
       - name: Upload chart as artifact
         uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b # v4.3.4
