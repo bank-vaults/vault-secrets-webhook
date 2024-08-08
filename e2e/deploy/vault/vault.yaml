@@ -146,6 +146,11 @@ spec:
           data:
             DOCKER_REPO_USER: dockerrepouser
             DOCKER_REPO_PASSWORD: dockerrepopassword
+            DOCKER_REPO_JSON_KEY: |
+              _json_key: {
+                "type": "service_account",
+                "project_id": "test"
+              }
       - type: kv
         path: secret/data/mysql
         data:
