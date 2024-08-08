@@ -113,16 +113,12 @@ func TestSecretValueInjection(t *testing.T) {
 			err := cfg.Client().Resources(cfg.Namespace()).Get(ctx, "test-secret-docker-json-key", cfg.Namespace(), &secret)
 			require.NoError(t, err)
 
-			type v1 struct {
+			type auth struct {
 				Auth string `json:"auth"`
 			}
 
-			type auths struct {
-				V1 v1 `json:"https://index.docker.io/v1/"`
-			}
-
 			type dockerconfig struct {
-				Auths auths `json:"auths"`
+				Auths map[string]auth `json:"auths"`
 			}
 
 			var dockerconfigjson dockerconfig
@@ -131,7 +127,7 @@ func TestSecretValueInjection(t *testing.T) {
 			require.NoError(t, err)
 
 			dockerrepoauth := base64.StdEncoding.EncodeToString([]byte("_json_key: {\n  \"type\": \"service_account\",\n  \"project_id\": \"test\"\n}\n"))
-			assert.Equal(t, dockerrepoauth, dockerconfigjson.Auths.V1.Auth)
+			assert.Equal(t, dockerrepoauth, dockerconfigjson.Auths["https://index.docker.io/v1/"].Auth)
 
 			return ctx
 		}).
