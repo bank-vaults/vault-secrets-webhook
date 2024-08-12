@@ -19,7 +19,7 @@ import (
 	"strings"
 
 	"emperror.dev/errors"
-	injector "github.com/bank-vaults/internal/pkg/vaultinjector"
+	injector "github.com/bank-vaults/internal/pkg/injector/vault"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
 	"github.com/bank-vaults/vault-secrets-webhook/pkg/common"
