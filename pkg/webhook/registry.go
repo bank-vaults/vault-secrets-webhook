@@ -117,7 +117,8 @@ func (r *Registry) GetImageConfig(
 	namespace string,
 	isDisabled bool,
 	container *corev1.Container,
-	podSpec *corev1.PodSpec) (*v1.Config, error) {
+	podSpec *corev1.PodSpec,
+) (*v1.Config, error) {
 	allowToCache := IsAllowedToCache(container)
 	if allowToCache {
 		if imageConfig, cacheHit := r.imageCache.Get(container.Image); cacheHit {

@@ -18,7 +18,7 @@ import (
 	"encoding/base64"
 
 	"emperror.dev/errors"
-	injector "github.com/bank-vaults/internal/pkg/injector/vault"
+	injector "github.com/bank-vaults/vault-sdk/injector/vault"
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/bank-vaults/vault-secrets-webhook/pkg/common"

@@ -154,23 +154,23 @@ labels: {}
 resources: {}
 
 # -- Node labels for pod assignment.
-# Check: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector
+# Check: <https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector>
 nodeSelector: {}
 
 # -- List of node tolerations for the pods.
-# Check: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+# Check: <https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/>
 tolerations: []
 
 # -- Node affinity settings for the pods.
-# Check: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/
+# Check: <https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/>
 affinity: {}
 
 # -- TopologySpreadConstraints to add for the pods.
-# Check: https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/
+# Check: <https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/>
 topologySpreadConstraints: {}
 
 # -- Assign a PriorityClassName to pods if set.
-# Check: https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/
+# Check: <https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/>
 priorityClassName: ""
 
 # -- Liveness and readiness probes for the webhook container
@@ -230,7 +230,7 @@ podsFailurePolicy: Ignore
 secretsFailurePolicy: Ignore
 
 # -- Webhook sideEffect value
-# Check: https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#side-effects
+# Check: <https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#side-effects>
 apiSideEffectValue: NoneOnDryRun
 
 # -- Namespace selector to use, will limit webhook scope (K8s version 1.15+)
