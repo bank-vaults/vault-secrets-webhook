@@ -1,6 +1,6 @@
 module github.com/bank-vaults/vault-secrets-webhook
 
-go 1.23
+go 1.23.0
 
 require (
 	emperror.dev/errors v0.8.1
@@ -13,7 +13,7 @@ require (
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/prometheus/client_golang v1.20.3
 	github.com/samber/slog-multi v1.2.1
-	github.com/slok/kubewebhook/v2 v2.6.0
+	github.com/slok/kubewebhook/v2 v2.7.0
 	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.9.0
 	k8s.io/api v0.31.1
@@ -26,7 +26,7 @@ require (
 
 require (
 	cloud.google.com/go v0.115.1 // indirect
-	cloud.google.com/go/auth v0.9.1 // indirect
+	cloud.google.com/go/auth v0.9.2 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.4 // indirect
 	cloud.google.com/go/compute/metadata v0.5.0 // indirect
 	cloud.google.com/go/iam v1.2.0 // indirect
