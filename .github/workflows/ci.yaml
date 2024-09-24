@@ -49,18 +49,6 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        vault_version: ["1.11.12", "1.12.8", "1.13.4", "1.14.8"]
-
-    services:
-      vault:
-        image: hashicorp/vault:${{ matrix.vault_version }}
-        env:
-          SKIP_SETCAP: true
-          VAULT_DEV_ROOT_TOKEN_ID: 227e1cce-6bf7-30bb-2d2a-acc854318caf
-        ports:
-          - 8200:8200
 
     steps:
       - name: Checkout repository
@@ -226,7 +214,7 @@ jobs:
     needs: [artifacts]
     strategy:
       matrix:
-        k8s_version: ["v1.24.15", "v1.25.11", "v1.26.6", "v1.27.3"]
+        k8s_version: ["v1.28.9", "v1.29.4", "v1.30.0"]
         # vault_version: ["1.11.12", "1.12.8", "1.13.4", "1.14.8"]
 
     steps:

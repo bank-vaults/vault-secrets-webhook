@@ -25,7 +25,7 @@ import (
 	"text/template"
 
 	"emperror.dev/errors"
-	injector "github.com/bank-vaults/internal/pkg/injector/vault"
+	injector "github.com/bank-vaults/vault-sdk/injector/vault"
 	"github.com/bank-vaults/vault-sdk/vault"
 	vaultapi "github.com/hashicorp/vault/api"
 	"github.com/slok/kubewebhook/v2/pkg/log"
