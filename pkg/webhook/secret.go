@@ -138,30 +138,42 @@ func (mw *MutatingWebhook) mutateDockerCreds(secret *corev1.Secret, dc *dockerCr
 		auth := string(authBytes)
 		if common.HasVaultPrefix(auth) {
 			split := strings.Split(auth, ":")
-			if len(split) != 4 {
-				return errors.New("splitting auth credentials failed")
-			}
-			username := fmt.Sprintf("%s:%s", split[0], split[1])
-			password := fmt.Sprintf("%s:%s", split[2], split[3])
+			if len(split) == 4 {
+				username := fmt.Sprintf("%s:%s", split[0], split[1])
+				password := fmt.Sprintf("%s:%s", split[2], split[3])
 
-			credentialData := map[string]string{
-				"username": username,
-				"password": password,
-			}
+				credentialData := map[string]string{
+					"username": username,
+					"password": password,
+				}
 
-			dcCreds, err := secretInjector.GetDataFromVault(credentialData)
-			if err != nil {
-				return err
+				dcCreds, err := secretInjector.GetDataFromVault(credentialData)
+				if err != nil {
+					return err
+				}
+				auth = fmt.Sprintf("%s:%s", dcCreds["username"], dcCreds["password"])
+				dockerAuth := dockerAuthConfig{
+					Auth: base64.StdEncoding.EncodeToString([]byte(auth)),
+				}
+				if creds.Username != "" && creds.Password != "" {
+					dockerAuth.Username = dcCreds["username"]
+					dockerAuth.Password = dcCreds["password"]
+				}
+				assembled.Auths[key] = dockerAuth
+			} else {
+				credentialData := map[string]string{
+					"auth": auth,
+				}
+
+				dcCreds, err := secretInjector.GetDataFromVault(credentialData)
+				if err != nil {
+					return err
+				}
+				dockerAuth := dockerAuthConfig{
+					Auth: base64.StdEncoding.EncodeToString([]byte(dcCreds["auth"])),
+				}
+				assembled.Auths[key] = dockerAuth
 			}
-			auth = fmt.Sprintf("%s:%s", dcCreds["username"], dcCreds["password"])
-			dockerAuth := dockerAuthConfig{
-				Auth: base64.StdEncoding.EncodeToString([]byte(auth)),
-			}
-			if creds.Username != "" && creds.Password != "" {
-				dockerAuth.Username = dcCreds["username"]
-				dockerAuth.Password = dcCreds["password"]
-			}
-			assembled.Auths[key] = dockerAuth
 		}
 	}
 
