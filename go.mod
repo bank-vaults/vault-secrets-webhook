@@ -11,7 +11,7 @@ require (
 	github.com/google/go-containerregistry/pkg/authn/k8schain v0.0.0-20240826191751-a07d1cab8700
 	github.com/hashicorp/vault/api v1.15.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/prometheus/client_golang v1.20.4
+	github.com/prometheus/client_golang v1.20.5
 	github.com/samber/slog-multi v1.2.3
 	github.com/slok/kubewebhook/v2 v2.7.0
 	github.com/spf13/viper v1.19.0
