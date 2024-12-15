@@ -43,7 +43,10 @@ import (
 )
 
 // Upgrade this when a new version is released
-const vaultOperatorVersion = "1.22.4"
+const (
+	defaultTimeout       = 2 * time.Minute
+	vaultOperatorVersion = "1.22.4"
+)
 
 var testenv env.Environment
 
@@ -132,7 +135,7 @@ func installVaultOperator(ctx context.Context, cfg *envconf.Config) (context.Con
 		helm.WithArgs("--create-namespace"),
 		helm.WithVersion(vaultOperatorVersion),
 		helm.WithWait(),
-		helm.WithTimeout("2m"),
+		helm.WithTimeout(defaultTimeout.String()),
 	)
 	if err != nil {
 		return ctx, fmt.Errorf("installing vault-operator: %w", err)
@@ -148,7 +151,7 @@ func uninstallVaultOperator(ctx context.Context, cfg *envconf.Config) (context.C
 		helm.WithName("vault-operator"),
 		helm.WithNamespace("vault-operator"),
 		helm.WithWait(),
-		helm.WithTimeout("2m"),
+		helm.WithTimeout(defaultTimeout.String()),
 	)
 	if err != nil {
 		return ctx, fmt.Errorf("uninstalling vault-operator: %w", err)
@@ -176,7 +179,7 @@ func installVaultSecretsWebhook(ctx context.Context, cfg *envconf.Config) (conte
 		helm.WithNamespace("vault-secrets-webhook"),
 		helm.WithArgs("-f", "deploy/vault-secrets-webhook/values.yaml", "--set", "image.tag="+version),
 		helm.WithWait(),
-		helm.WithTimeout("2m"),
+		helm.WithTimeout(defaultTimeout.String()),
 	)
 	if err != nil {
 		return ctx, fmt.Errorf("installing vault-secrets-webhook: %w", err)
@@ -192,7 +195,7 @@ func uninstallVaultSecretsWebhook(ctx context.Context, cfg *envconf.Config) (con
 		helm.WithName("vault-secrets-webhook"),
 		helm.WithNamespace("vault-secrets-webhook"),
 		helm.WithWait(),
-		helm.WithTimeout("2m"),
+		helm.WithTimeout(defaultTimeout.String()),
 	)
 	if err != nil {
 		return ctx, fmt.Errorf("uninstalling vault-secrets-webhook: %w", err)
@@ -233,7 +236,7 @@ func installVault(ctx context.Context, cfg *envconf.Config) (context.Context, er
 	}
 
 	// wait for the statefulSet to become available
-	err = wait.For(conditions.New(r).ResourcesFound(statefulSets), wait.WithTimeout(1*time.Minute))
+	err = wait.For(conditions.New(r).ResourcesFound(statefulSets), wait.WithTimeout(defaultTimeout))
 	if err != nil {
 		return ctx, err
 	}
@@ -245,7 +248,7 @@ func installVault(ctx context.Context, cfg *envconf.Config) (context.Context, er
 	}
 
 	// wait for the pod to become available
-	err = wait.For(conditions.New(r).PodReady(&pod), wait.WithTimeout(1*time.Minute))
+	err = wait.For(conditions.New(r).PodReady(&pod), wait.WithTimeout(defaultTimeout))
 	if err != nil {
 		return ctx, err
 	}
@@ -263,7 +266,7 @@ func waitForVaultTLS(ctx context.Context, cfg *envconf.Config) (context.Context,
 	}
 
 	// wait for the vault-tls secret to become available
-	err := wait.For(conditions.New(cfg.Client().Resources()).ResourcesFound(vaultTLSSecrets), wait.WithTimeout(1*time.Minute))
+	err := wait.For(conditions.New(cfg.Client().Resources()).ResourcesFound(vaultTLSSecrets), wait.WithTimeout(defaultTimeout))
 	if err != nil {
 		return ctx, err
 	}
