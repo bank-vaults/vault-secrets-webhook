@@ -197,9 +197,32 @@ func getImageConfig(ctx context.Context, client kubernetes.Interface, container 
 		return nil, errors.Wrap(err, "cannot fetch image descriptor")
 	}
 
-	image, err := descriptor.Image()
-	if err != nil {
-		return nil, errors.Wrap(err, "cannot convert image descriptor to v1.Image")
+	var image v1.Image
+	if descriptor.MediaType.IsIndex() {
+		index, err := descriptor.ImageIndex()
+		if err != nil {
+			return nil, errors.Wrap(err, "cannot get image index")
+		}
+
+		manifest, err := index.IndexManifest()
+		if err != nil {
+			return nil, errors.Wrap(err, "cannot get index manifest")
+		}
+
+		if len(manifest.Manifests) == 0 {
+			return nil, errors.New("no manifests found in the image index")
+		}
+
+		// Get the first available image
+		image, err = index.Image(manifest.Manifests[0].Digest)
+		if err != nil {
+			return nil, errors.Wrap(err, "cannot get image from manifest")
+		}
+	} else {
+		image, err = descriptor.Image()
+		if err != nil {
+			return nil, errors.Wrap(err, "cannot convert image descriptor to v1.Image")
+		}
 	}
 
 	configFile, err := image.ConfigFile()
