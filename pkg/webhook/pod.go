@@ -193,6 +193,10 @@ func (mw *MutatingWebhook) MutatePod(ctx context.Context, pod *corev1.Pod, vault
 		mw.logger.Debug("Successfully appended pod spec volumes")
 	}
 
+	if vaultConfig.AgentConfigMap != "" && vaultConfig.UseAgent {
+		mw.addAgentSecretsVolToContainers(vaultConfig, pod.Spec.Containers)
+	}
+
 	if vaultConfig.AgentConfigMap != "" && !vaultConfig.UseAgent {
 		mw.logger.Debug("Vault Agent config found")
 
@@ -688,6 +692,13 @@ func getInitContainers(originalContainers []corev1.Container, podSecurityContext
 			Name:      "vault-agent-config",
 			MountPath: "/vault/agent/",
 		})
+
+		if vaultConfig.CtConfigMap == "" {
+			containerVolMounts = append(containerVolMounts, corev1.VolumeMount{
+				Name:      "agent-secrets",
+				MountPath: vaultConfig.ConfigfilePath,
+			})
+		}
 
 		securityContext := getBaseSecurityContext(podSecurityContext, vaultConfig)
 		securityContext.Capabilities.Add = []corev1.Capability{

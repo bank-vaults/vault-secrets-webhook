@@ -1787,6 +1787,189 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "Will mutate pod and add agent-secrets volume when running vault agent as initcontainer",
+			fields: fields{
+				k8sClient: fake.NewSimpleClientset(),
+				registry: &MockRegistry{
+					Image: v1.Config{},
+				},
+			},
+			args: args{
+				pod: &corev1.Pod{
+					Spec: corev1.PodSpec{
+						InitContainers: []corev1.Container{
+							{
+								Name:    "MyInitContainer",
+								Image:   "myInitimage",
+								Command: []string{"/bin/bash"},
+								Args:    nil,
+								VolumeMounts: []corev1.VolumeMount{
+									{
+										MountPath: "/var/run/secrets/vault",
+									},
+								},
+							},
+						},
+						Containers: []corev1.Container{
+							{
+								Name:    "MyContainer",
+								Image:   "myimage",
+								Command: []string{"/bin/bash"},
+								Args:    nil,
+								VolumeMounts: []corev1.VolumeMount{
+									{
+										MountPath: "/var/run/secrets/vault",
+									},
+								},
+							},
+						},
+					},
+				},
+				vaultConfig: VaultConfig{
+					AgentConfigMap: "config-map-test",
+					UseAgent:       true,
+					ConfigfilePath: "/vault/secrets",
+					// the rest are just defaults for the wantedPod spec..
+					Addr:                          "test",
+					SkipVerify:                    false,
+					AgentImage:                    "hashicorp/vault:latest",
+					AgentImagePullPolicy:          "IfNotPresent",
+					EnvCPURequest:                 resource.MustParse("50m"),
+					EnvMemoryRequest:              resource.MustParse("64Mi"),
+					EnvCPULimit:                   resource.MustParse("250m"),
+					EnvMemoryLimit:                resource.MustParse("64Mi"),
+					ServiceAccountTokenVolumeName: "/var/run/secrets/vault",
+					RunAsNonRoot:                  true,
+					RunAsUser:                     int64(1000),
+					RunAsGroup:                    int64(1000),
+				},
+			},
+			wantedPod: &corev1.Pod{
+				Spec: corev1.PodSpec{
+					InitContainers: []corev1.Container{
+						{
+							Name:            "vault-agent",
+							Image:           "hashicorp/vault:latest",
+							Command:         []string{"vault", "agent", "-config=/vault/agent/config.hcl", "-exit-after-auth"},
+							ImagePullPolicy: "IfNotPresent",
+							Env: []corev1.EnvVar{
+								{
+									Name:  "VAULT_ADDR",
+									Value: "test",
+								},
+								{
+									Name:  "VAULT_SKIP_VERIFY",
+									Value: "false",
+								},
+							},
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("250m"),
+									corev1.ResourceMemory: resource.MustParse("64Mi"),
+								},
+								Requests: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("50m"),
+									corev1.ResourceMemory: resource.MustParse("64Mi"),
+								},
+							},
+							SecurityContext: agentInitContainerSecurityContext,
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "vault-env",
+									MountPath: "/vault/",
+								},
+								{
+									MountPath: "/var/run/secrets/vault",
+								},
+								{
+									Name:      "vault-agent-config",
+									MountPath: "/vault/agent/",
+								},
+								{
+									Name:      "agent-secrets",
+									MountPath: "/vault/secrets",
+								},
+							},
+						},
+						{
+							Name:    "MyInitContainer",
+							Image:   "myInitimage",
+							Command: []string{"/bin/bash"},
+							Args:    nil,
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									MountPath: "/var/run/secrets/vault",
+								},
+							},
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							Name:    "MyContainer",
+							Image:   "myimage",
+							Command: []string{"/bin/bash"},
+							Args:    nil,
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									MountPath: "/var/run/secrets/vault",
+								},
+								{
+									Name:      "agent-secrets",
+									MountPath: "/vault/secrets",
+								},
+							},
+						},
+					},
+					Volumes: []corev1.Volume{
+						{
+							Name: "vault-env",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									Medium: corev1.StorageMediumMemory,
+								},
+							},
+						},
+						{
+							Name: "vault-agent-config",
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "config-map-test",
+									},
+								},
+							},
+						},
+						{
+							Name: "agent-secrets",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									Medium: corev1.StorageMediumMemory,
+								},
+							},
+						},
+						{
+							Name: "agent-configmap",
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "config-map-test",
+									},
+									Items: []corev1.KeyToPath{
+										{
+											Key:  "config.hcl",
+											Path: "config.hcl",
+										},
+									},
+									DefaultMode: &defaultMode,
+								},
+							},
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
 	}
 
 	for _, tt := range tests {
