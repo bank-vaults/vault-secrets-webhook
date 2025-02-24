@@ -1961,7 +1961,7 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 											Path: "config.hcl",
 										},
 									},
-									DefaultMode: func() *int32 { x := int32(420); return &x }(),
+									DefaultMode: &defaultMode,
 								},
 							},
 						},
