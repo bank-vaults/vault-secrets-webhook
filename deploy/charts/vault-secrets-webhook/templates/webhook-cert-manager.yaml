@@ -37,6 +37,9 @@ spec:
   isCA: true
   privateKey:
     rotationPolicy: Always
+  secretTemplate:
+    annotations:
+      vault.security.banzaicloud.io/mutate: skip
 ---
 
 # Create an Issuer that uses the above generated CA certificate to issue certs
