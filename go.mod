@@ -1,6 +1,7 @@
 module github.com/bank-vaults/vault-secrets-webhook
 
 go 1.23.1
+toolchain go1.24.1
 
 require (
 	emperror.dev/errors v0.8.1
@@ -16,9 +17,9 @@ require (
 	github.com/slok/kubewebhook/v2 v2.7.0
 	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.10.0
-	k8s.io/api v0.32.2
-	k8s.io/apimachinery v0.32.2
-	k8s.io/client-go v0.32.2
+	k8s.io/api v0.32.3
+	k8s.io/apimachinery v0.32.3
+	k8s.io/client-go v0.32.3
 	k8s.io/klog/v2 v2.130.1
 	sigs.k8s.io/controller-runtime v0.20.3
 	sigs.k8s.io/e2e-framework v0.6.0
