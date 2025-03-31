@@ -54,7 +54,11 @@ func (kpr *CertificateReloader) watchCertificate() {
 		slog.Error(err.Error())
 		os.Exit(1)
 	}
-	defer watcher.Close()
+	defer func() {
+		if err := watcher.Close(); err != nil {
+			slog.Error(fmt.Sprintf("error closing watcher: %s", err.Error()))
+		}
+	}()
 
 	certDir, _ := filepath.Split(kpr.certPath)
 	slog.Info(fmt.Sprintf("watching directory for changes: %s", certDir))
