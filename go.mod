@@ -1,7 +1,6 @@
 module github.com/bank-vaults/vault-secrets-webhook
 
-go 1.23.1
-toolchain go1.24.1
+go 1.24.1
 
 require (
 	emperror.dev/errors v0.8.1
@@ -223,5 +222,3 @@ require (
 )
 
 replace github.com/imdario/mergo => github.com/imdario/mergo v0.3.16
-
-exclude google.golang.org/grpc v1.69.0
