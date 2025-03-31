@@ -105,7 +105,7 @@ func traverseObject(o interface{}, secretInjector *injector.SecretInjector) erro
 					if err != nil {
 						return err
 					}
-					dataFromVault = strings.Replace(dataFromVault, vaultSecretReference[0], mapData["data"], -1)
+					dataFromVault = strings.ReplaceAll(dataFromVault, vaultSecretReference[0], mapData["data"])
 				}
 				e.Set(dataFromVault)
 			}
