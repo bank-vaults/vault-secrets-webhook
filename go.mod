@@ -5,7 +5,7 @@ go 1.24.1
 require (
 	emperror.dev/errors v0.8.1
 	github.com/bank-vaults/vault-sdk v0.10.2
-	github.com/fsnotify/fsnotify v1.8.0
+	github.com/fsnotify/fsnotify v1.9.0
 	github.com/google/go-cmp v0.7.0
 	github.com/google/go-containerregistry v0.20.3
 	github.com/google/go-containerregistry/pkg/authn/k8schain v0.0.0-20241111191718-6bce25ecf029
