@@ -28,6 +28,7 @@ import (
 	injector "github.com/bank-vaults/vault-sdk/injector/vault"
 	"github.com/bank-vaults/vault-sdk/vault"
 	vaultapi "github.com/hashicorp/vault/api"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/slok/kubewebhook/v2/pkg/log"
 	"github.com/slok/kubewebhook/v2/pkg/model"
 	"github.com/slok/kubewebhook/v2/pkg/webhook/mutating"
@@ -227,6 +228,16 @@ func (mw *MutatingWebhook) newVaultClient(vaultConfig VaultConfig) (*vault.Clien
 
 		clientTLSConfig.RootCAs = pool
 	}
+
+	clientConfig.HttpClient.Transport = promhttp.InstrumentRoundTripperCounter(
+		vaultRequestsCount, InstrumentRoundTripperErrors(
+			vaultRequestsErrorsCount,
+			promhttp.InstrumentRoundTripperDuration(
+				vaultRequestDuration,
+				clientConfig.HttpClient.Transport,
+			),
+		),
+	)
 
 	if vaultConfig.VaultServiceAccount != "" {
 		sa, err := mw.k8sClient.CoreV1().ServiceAccounts(vaultConfig.ObjectNamespace).Get(context.Background(), vaultConfig.VaultServiceAccount, metav1.GetOptions{})
