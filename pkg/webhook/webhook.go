@@ -229,12 +229,17 @@ func (mw *MutatingWebhook) newVaultClient(vaultConfig VaultConfig) (*vault.Clien
 		clientTLSConfig.RootCAs = pool
 	}
 
-	clientConfig.HttpClient.Transport = promhttp.InstrumentRoundTripperCounter(
-		vaultRequestsCount, InstrumentRoundTripperErrors(
-			vaultRequestsErrorsCount,
-			promhttp.InstrumentRoundTripperDuration(
-				vaultRequestDuration,
-				clientConfig.HttpClient.Transport,
+	clientConfig.HttpClient.Transport = promhttp.InstrumentRoundTripperInFlight(
+		vaultInFlightRequestsGauge,
+		promhttp.InstrumentRoundTripperCounter(
+			vaultRequestsCount,
+			InstrumentErrorsAndSizeRoundTripper(
+				vaultRequestsErrorsCount,
+				vaultRequestSize,
+				promhttp.InstrumentRoundTripperDuration(
+					vaultRequestDuration,
+					clientConfig.HttpClient.Transport,
+				),
 			),
 		),
 	)

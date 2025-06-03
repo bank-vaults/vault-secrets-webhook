@@ -32,6 +32,24 @@ var (
 		},
 		nil,
 	)
+	vaultRequestSize = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Namespace: "vault",
+			Subsystem: "client",
+			Name:      "request_size_bytes",
+			Help:      "Size of Vault client requests in bytes.",
+			Buckets:   prometheus.DefBuckets,
+		},
+		nil,
+	)
+	vaultInFlightRequestsGauge = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Namespace: "vault",
+			Subsystem: "client",
+			Name:      "in_flight_requests",
+			Help:      "Gauge of Vault in-flight client requests.",
+		},
+	)
 	vaultRequestsCount = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Namespace: "vault",
@@ -46,20 +64,24 @@ var (
 			Subsystem: "client",
 			Name:      "requests_errors_total",
 			Help:      "Count of Vault client request errors.",
-		}, []string{},
+		},
+		nil,
 	)
 )
 
 // RegisterMetrics registers the Vault client metrics with Prometheus
 func RegisterMetrics(registry *prometheus.Registry) {
 	registry.MustRegister(vaultRequestDuration)
+	registry.MustRegister(vaultRequestSize)
+	registry.MustRegister(vaultInFlightRequestsGauge)
 	registry.MustRegister(vaultRequestsCount)
 	registry.MustRegister(vaultRequestsErrorsCount)
 }
 
-// InstrumentRoundTripperDuration instruments the RoundTripper to track request errors
-func InstrumentRoundTripperErrors(counter *prometheus.CounterVec, next http.RoundTripper) promhttp.RoundTripperFunc {
+// InstrumentErrorsAndSizeRoundTripper instruments RoundTripper to track request errors and size
+func InstrumentErrorsAndSizeRoundTripper(counter *prometheus.CounterVec, size *prometheus.HistogramVec, next http.RoundTripper) promhttp.RoundTripperFunc {
 	return func(req *http.Request) (*http.Response, error) {
+		size.WithLabelValues().Observe(float64(req.ContentLength))
 		resp, err := next.RoundTrip(req)
 		if err != nil {
 			counter.WithLabelValues().Inc()
