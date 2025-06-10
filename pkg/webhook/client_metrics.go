@@ -67,15 +67,35 @@ var (
 		},
 		nil,
 	)
+	vaultAuthAttemptsCount = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "vault",
+			Subsystem: "client",
+			Name:      "auth_attempts_total",
+			Help:      "Count of Vault client auth attempts.",
+		},
+		nil,
+	)
+	vaultAuthAttemptsErrorsCount = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "vault",
+			Subsystem: "client",
+			Name:      "auth_attempts_errors_total",
+			Help:      "Count of Vault client auth attempts errors.",
+		},
+		[]string{"reason"},
+	)
 )
 
 // RegisterMetrics registers the Vault client metrics with Prometheus
-func RegisterMetrics(registry *prometheus.Registry) {
+func RegisterMetrics(registry prometheus.Registerer) {
 	registry.MustRegister(vaultRequestDuration)
 	registry.MustRegister(vaultRequestSize)
 	registry.MustRegister(vaultInFlightRequestsGauge)
 	registry.MustRegister(vaultRequestsCount)
 	registry.MustRegister(vaultRequestsErrorsCount)
+	registry.MustRegister(vaultAuthAttemptsCount)
+	registry.MustRegister(vaultAuthAttemptsErrorsCount)
 }
 
 // InstrumentErrorsAndSizeRoundTripper instruments RoundTripper to track request errors and size
