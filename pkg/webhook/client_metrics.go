@@ -16,6 +16,7 @@ package webhook
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -65,7 +66,7 @@ var (
 			Name:      "requests_errors_total",
 			Help:      "Count of Vault client request errors.",
 		},
-		nil,
+		[]string{"reason"},
 	)
 	vaultAuthAttemptsCount = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
@@ -99,14 +100,33 @@ func RegisterMetrics(registry prometheus.Registerer) {
 }
 
 // InstrumentErrorsAndSizeRoundTripper instruments RoundTripper to track request errors and size
-func InstrumentErrorsAndSizeRoundTripper(counter *prometheus.CounterVec, size *prometheus.HistogramVec, next http.RoundTripper) promhttp.RoundTripperFunc {
+func InstrumentErrorsAndSizeRoundTripper(errCounter *prometheus.CounterVec, size *prometheus.HistogramVec, next http.RoundTripper) promhttp.RoundTripperFunc {
 	return func(req *http.Request) (*http.Response, error) {
 		size.WithLabelValues().Observe(float64(req.ContentLength))
 		resp, err := next.RoundTrip(req)
 		if err != nil {
-			counter.WithLabelValues().Inc()
+			errCounter.WithLabelValues(mapErrorToLabel(err)).Inc()
 			return nil, err
 		}
 		return resp, nil
 	}
+}
+
+func mapErrorToLabel(err error) string {
+	if strings.Contains(err.Error(), "no route to host") {
+		return "no-route-to-host"
+	}
+	if strings.Contains(err.Error(), "i/o timeout") {
+		return "io-timeout"
+	}
+	if strings.Contains(err.Error(), "TLS handshake timeout") {
+		return "tls-handshake-timeout"
+	}
+	if strings.Contains(err.Error(), "TLS handshake error") {
+		return "tls-handshake-error"
+	}
+	if strings.Contains(err.Error(), "unexpected EOF") {
+		return "unexpected-eof"
+	}
+	return "unknown"
 }
