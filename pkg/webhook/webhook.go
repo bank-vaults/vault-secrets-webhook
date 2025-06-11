@@ -28,6 +28,7 @@ import (
 	injector "github.com/bank-vaults/vault-sdk/injector/vault"
 	"github.com/bank-vaults/vault-sdk/vault"
 	vaultapi "github.com/hashicorp/vault/api"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/slok/kubewebhook/v2/pkg/log"
 	"github.com/slok/kubewebhook/v2/pkg/model"
 	"github.com/slok/kubewebhook/v2/pkg/webhook/mutating"
@@ -193,8 +194,10 @@ func (mw *MutatingWebhook) lookForValueFrom(env corev1.EnvVar, ns string) (*core
 }
 
 func (mw *MutatingWebhook) newVaultClient(vaultConfig VaultConfig) (*vault.Client, error) {
+	vaultAuthAttemptsCount.WithLabelValues().Inc()
 	clientConfig := vaultapi.DefaultConfig()
 	if clientConfig.Error != nil {
+		vaultAuthAttemptsErrorsCount.WithLabelValues("config_error").Inc()
 		return nil, clientConfig.Error
 	}
 
@@ -203,6 +206,7 @@ func (mw *MutatingWebhook) newVaultClient(vaultConfig VaultConfig) (*vault.Clien
 	tlsConfig := vaultapi.TLSConfig{Insecure: vaultConfig.SkipVerify}
 	err := clientConfig.ConfigureTLS(&tlsConfig)
 	if err != nil {
+		vaultAuthAttemptsErrorsCount.WithLabelValues("config_error").Inc()
 		return nil, err
 	}
 
@@ -213,6 +217,7 @@ func (mw *MutatingWebhook) newVaultClient(vaultConfig VaultConfig) (*vault.Clien
 			metav1.GetOptions{},
 		)
 		if err != nil {
+			vaultAuthAttemptsErrorsCount.WithLabelValues("kubernetes_error").Inc()
 			return nil, errors.Wrap(err, "failed to read Vault TLS Secret")
 		}
 
@@ -222,15 +227,39 @@ func (mw *MutatingWebhook) newVaultClient(vaultConfig VaultConfig) (*vault.Clien
 
 		ok := pool.AppendCertsFromPEM(tlsSecret.Data["ca.crt"])
 		if !ok {
+			vaultAuthAttemptsErrorsCount.WithLabelValues("config_error").Inc()
 			return nil, errors.Errorf("error loading Vault CA PEM from TLS Secret: %s", tlsSecret.Name)
 		}
 
 		clientTLSConfig.RootCAs = pool
 	}
 
+	clientConfig.HttpClient.Transport = promhttp.InstrumentRoundTripperInFlight(
+		vaultInFlightRequestsGauge,
+		promhttp.InstrumentRoundTripperCounter(
+			vaultRequestsCount,
+			InstrumentErrorsAndSizeRoundTripper(
+				vaultRequestsErrorsCount,
+				vaultRequestSize,
+				promhttp.InstrumentRoundTripperDuration(
+					vaultRequestDuration,
+					clientConfig.HttpClient.Transport,
+				),
+			),
+		),
+	)
+
+	clientOptions := []vault.ClientOption{
+		vault.ClientRole(vaultConfig.Role),
+		vault.ClientAuthPath(vaultConfig.Path),
+		vault.ClientLogger(&clientLogger{logger: mw.logger}),
+		vault.VaultNamespace(vaultConfig.VaultNamespace),
+	}
+
 	if vaultConfig.VaultServiceAccount != "" {
 		sa, err := mw.k8sClient.CoreV1().ServiceAccounts(vaultConfig.ObjectNamespace).Get(context.Background(), vaultConfig.VaultServiceAccount, metav1.GetOptions{})
 		if err != nil {
+			vaultAuthAttemptsErrorsCount.WithLabelValues("kubernetes_error").Inc()
 			return nil, errors.Wrap(err, "Failed to retrieve specified service account on namespace "+vaultConfig.ObjectNamespace)
 		}
 
@@ -238,6 +267,7 @@ func (mw *MutatingWebhook) newVaultClient(vaultConfig VaultConfig) (*vault.Clien
 		if len(sa.Secrets) > 0 {
 			secret, err := mw.k8sClient.CoreV1().Secrets(vaultConfig.ObjectNamespace).Get(context.Background(), sa.Secrets[0].Name, metav1.GetOptions{})
 			if err != nil {
+				vaultAuthAttemptsErrorsCount.WithLabelValues("kubernetes_error").Inc()
 				return nil, errors.Wrap(err, "Failed to retrieve secret for service account "+sa.Secrets[0].Name+" in namespace "+vaultConfig.ObjectNamespace)
 			}
 			saToken = string(secret.Data["token"])
@@ -259,30 +289,35 @@ func (mw *MutatingWebhook) newVaultClient(vaultConfig VaultConfig) (*vault.Clien
 				metav1.CreateOptions{},
 			)
 			if err != nil {
+				vaultAuthAttemptsErrorsCount.WithLabelValues("kubernetes_error").Inc()
 				return nil, errors.Wrap(err, "Failed to create a token for the specified service account "+vaultConfig.VaultServiceAccount+" on namespace "+vaultConfig.ObjectNamespace)
 			}
 			saToken = token.Status.Token
 		}
 
-		return vault.NewClientFromConfig(
-			clientConfig,
-			vault.ClientRole(vaultConfig.Role),
-			vault.ClientAuthPath(vaultConfig.Path),
+		clientOptions = append(
+			clientOptions,
 			vault.NamespacedSecretAuthMethod,
-			vault.ClientLogger(&clientLogger{logger: mw.logger}),
 			vault.ExistingSecret(saToken),
-			vault.VaultNamespace(vaultConfig.VaultNamespace),
+		)
+	} else {
+		clientOptions = append(
+			clientOptions,
+			vault.ClientAuthMethod(vaultConfig.AuthMethod),
 		)
 	}
 
-	return vault.NewClientFromConfig(
+	client, err := vault.NewClientFromConfig(
 		clientConfig,
-		vault.ClientRole(vaultConfig.Role),
-		vault.ClientAuthPath(vaultConfig.Path),
-		vault.ClientAuthMethod(vaultConfig.AuthMethod),
-		vault.ClientLogger(&clientLogger{logger: mw.logger}),
-		vault.VaultNamespace(vaultConfig.VaultNamespace),
+		clientOptions...,
 	)
+
+	if err != nil {
+		vaultAuthAttemptsErrorsCount.WithLabelValues("config_error").Inc()
+		return nil, err
+	}
+
+	return client, nil
 }
 
 func (mw *MutatingWebhook) ServeMetrics(addr string, handler http.Handler) {

@@ -151,6 +151,7 @@ func main() {
 	mutator := webhook.ErrorLoggerMutator(mutatingWebhook.VaultSecretsMutator, whLogger)
 
 	promRegistry := prometheus.NewRegistry()
+	webhook.RegisterMetrics(promRegistry)
 	metricsRecorder, err := whmetrics.NewRecorder(whmetrics.RecorderConfig{Registry: promRegistry})
 	if err != nil {
 		logger.Error(fmt.Errorf("error creating metrics recorder: %w", err).Error())
