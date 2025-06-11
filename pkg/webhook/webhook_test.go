@@ -35,10 +35,10 @@ func TestNewVaultClientMetrics(t *testing.T) {
 		{
 			name: "successful vault client creation with service account token",
 			vaultConfig: VaultConfig{
-				Addr:               "https://vault.example.com",
-				SkipVerify:         true,
-				Role:              "test-role",
-				Path:              "kubernetes",
+				Addr:                "https://vault.example.com",
+				SkipVerify:          true,
+				Role:                "test-role",
+				Path:                "kubernetes",
 				VaultServiceAccount: "test-sa",
 				ObjectNamespace:     "test-namespace",
 			},
@@ -76,10 +76,10 @@ func TestNewVaultClientMetrics(t *testing.T) {
 		{
 			name: "error when service account not found",
 			vaultConfig: VaultConfig{
-				Addr:               "https://127.0.0.1:8082",
-				SkipVerify:         true,
-				Role:              "test-role",
-				Path:              "kubernetes",
+				Addr:                "https://127.0.0.1:8082",
+				SkipVerify:          true,
+				Role:                "test-role",
+				Path:                "kubernetes",
 				VaultServiceAccount: "non-existent-sa",
 				ObjectNamespace:     "test-namespace",
 			},
@@ -99,7 +99,7 @@ func TestNewVaultClientMetrics(t *testing.T) {
 			mw, err := NewMutatingWebhook(logger, k8sClient)
 			require.NoError(t, err)
 
-			if (tt.handler != nil) {
+			if tt.handler != nil {
 				server := httptest.NewServer(tt.handler)
 				tt.vaultConfig.Addr = server.URL
 				defer server.Close()

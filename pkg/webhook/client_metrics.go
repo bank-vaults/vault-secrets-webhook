@@ -128,5 +128,6 @@ func mapErrorToLabel(err error) string {
 	if strings.Contains(err.Error(), "unexpected EOF") {
 		return "unexpected-eof"
 	}
+
 	return "unknown"
 }
