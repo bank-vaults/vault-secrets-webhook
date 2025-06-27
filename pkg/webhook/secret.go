@@ -15,6 +15,7 @@
 package webhook
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -81,7 +82,7 @@ func secretNeedsMutation(secret *corev1.Secret) (bool, error) {
 	return false, nil
 }
 
-func (mw *MutatingWebhook) MutateSecret(secret *corev1.Secret, vaultConfig VaultConfig) error {
+func (mw *MutatingWebhook) MutateSecret(ctx context.Context, secret *corev1.Secret, vaultConfig VaultConfig) error {
 	// do an early exit and don't construct the Vault client if not needed
 	requiredToMutate, err := secretNeedsMutation(secret)
 	if err != nil {
@@ -92,7 +93,7 @@ func (mw *MutatingWebhook) MutateSecret(secret *corev1.Secret, vaultConfig Vault
 		return nil
 	}
 
-	vaultClient, err := mw.newVaultClient(vaultConfig)
+	vaultClient, err := mw.newVaultClient(ctx, vaultConfig)
 	if err != nil {
 		return errors.Wrap(err, "failed to create vault client")
 	}
@@ -112,13 +113,13 @@ func (mw *MutatingWebhook) MutateSecret(secret *corev1.Secret, vaultConfig Vault
 		if err != nil {
 			return errors.Wrap(err, "unmarshal dockerconfig json failed")
 		}
-		err = mw.mutateDockerCreds(secret, &dc, &secretInjector)
+		err = mw.mutateDockerCreds(ctx, secret, &dc, &secretInjector)
 		if err != nil {
 			return errors.Wrap(err, "mutate dockerconfig json failed")
 		}
 	}
 
-	err = mw.mutateSecretData(secret, &secretInjector)
+	err = mw.mutateSecretData(ctx, secret, &secretInjector)
 	if err != nil {
 		return errors.Wrap(err, "mutate generic secret failed")
 	}
@@ -126,7 +127,7 @@ func (mw *MutatingWebhook) MutateSecret(secret *corev1.Secret, vaultConfig Vault
 	return nil
 }
 
-func (mw *MutatingWebhook) mutateDockerCreds(secret *corev1.Secret, dc *dockerCredentials, secretInjector *injector.SecretInjector) error {
+func (mw *MutatingWebhook) mutateDockerCreds(ctx context.Context, secret *corev1.Secret, dc *dockerCredentials, secretInjector *injector.SecretInjector) error {
 	assembled := dockerCredentials{Auths: map[string]dockerAuthConfig{}}
 
 	for key, creds := range dc.Auths {
@@ -149,7 +150,7 @@ func (mw *MutatingWebhook) mutateDockerCreds(secret *corev1.Secret, dc *dockerCr
 				"password": password,
 			}
 
-			dcCreds, err := secretInjector.GetDataFromVault(credentialData)
+			dcCreds, err := secretInjector.GetDataFromVaultWithContext(ctx, credentialData)
 			if err != nil {
 				return err
 			}
@@ -175,14 +176,14 @@ func (mw *MutatingWebhook) mutateDockerCreds(secret *corev1.Secret, dc *dockerCr
 	return nil
 }
 
-func (mw *MutatingWebhook) mutateSecretData(secret *corev1.Secret, secretInjector *injector.SecretInjector) error {
+func (mw *MutatingWebhook) mutateSecretData(ctx context.Context, secret *corev1.Secret, secretInjector *injector.SecretInjector) error {
 	convertedData := make(map[string]string, len(secret.Data))
 
 	for k := range secret.Data {
 		convertedData[k] = string(secret.Data[k])
 	}
 
-	convertedData, err := secretInjector.GetDataFromVault(convertedData)
+	convertedData, err := secretInjector.GetDataFromVaultWithContext(ctx, convertedData)
 	if err != nil {
 		return err
 	}
