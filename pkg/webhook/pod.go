@@ -171,10 +171,10 @@ func (mw *MutatingWebhook) MutatePod(ctx context.Context, pod *corev1.Pod, vault
 				configMap := getConfigMapForVaultAgent(pod, vaultConfig)
 				agentConfigMapName = configMap.Name
 				if !dryRun {
-					_, err := mw.k8sClient.CoreV1().ConfigMaps(vaultConfig.ObjectNamespace).Create(context.Background(), configMap, metav1.CreateOptions{})
+					_, err := mw.k8sClient.CoreV1().ConfigMaps(vaultConfig.ObjectNamespace).Create(ctx, configMap, metav1.CreateOptions{})
 					if err != nil {
 						if apierrors.IsAlreadyExists(err) {
-							_, err = mw.k8sClient.CoreV1().ConfigMaps(vaultConfig.ObjectNamespace).Update(context.Background(), configMap, metav1.UpdateOptions{})
+							_, err = mw.k8sClient.CoreV1().ConfigMaps(vaultConfig.ObjectNamespace).Update(ctx, configMap, metav1.UpdateOptions{})
 							if err != nil {
 								return errors.WrapIf(err, "failed to update ConfigMap for config")
 							}
@@ -243,7 +243,7 @@ func (mw *MutatingWebhook) mutateContainers(ctx context.Context, containers []co
 	for i, container := range containers {
 		var envVars []corev1.EnvVar
 		if len(container.EnvFrom) > 0 {
-			envFrom, err := mw.lookForEnvFrom(container.EnvFrom, vaultConfig.ObjectNamespace)
+			envFrom, err := mw.lookForEnvFrom(ctx, container.EnvFrom, vaultConfig.ObjectNamespace)
 			if err != nil {
 				return false, err
 			}
@@ -255,7 +255,7 @@ func (mw *MutatingWebhook) mutateContainers(ctx context.Context, containers []co
 				envVars = append(envVars, env)
 			}
 			if env.ValueFrom != nil {
-				valueFrom, err := mw.lookForValueFrom(env, vaultConfig.ObjectNamespace)
+				valueFrom, err := mw.lookForValueFrom(ctx, env, vaultConfig.ObjectNamespace)
 				if err != nil {
 					return false, err
 				}

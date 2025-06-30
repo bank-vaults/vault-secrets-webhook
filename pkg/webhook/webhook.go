@@ -79,41 +79,41 @@ func (mw *MutatingWebhook) VaultSecretsMutator(ctx context.Context, ar *model.Ad
 		return &mutating.MutatorResult{MutatedObject: v}, mw.MutatePod(ctx, v, vaultConfig, ar.DryRun)
 
 	case *corev1.Secret:
-		return &mutating.MutatorResult{MutatedObject: v}, mw.MutateSecret(v, vaultConfig)
+		return &mutating.MutatorResult{MutatedObject: v}, mw.MutateSecret(ctx, v, vaultConfig)
 
 	case *corev1.ConfigMap:
-		return &mutating.MutatorResult{MutatedObject: v}, mw.MutateConfigMap(v, vaultConfig)
+		return &mutating.MutatorResult{MutatedObject: v}, mw.MutateConfigMap(ctx, v, vaultConfig)
 
 	case *unstructured.Unstructured:
-		return &mutating.MutatorResult{MutatedObject: v}, mw.MutateObject(v, vaultConfig)
+		return &mutating.MutatorResult{MutatedObject: v}, mw.MutateObject(ctx, v, vaultConfig)
 
 	default:
 		return &mutating.MutatorResult{}, nil
 	}
 }
 
-func (mw *MutatingWebhook) getDataFromConfigmap(cmName string, ns string) (map[string]string, error) {
-	configMap, err := mw.k8sClient.CoreV1().ConfigMaps(ns).Get(context.Background(), cmName, metav1.GetOptions{})
+func (mw *MutatingWebhook) getDataFromConfigmap(ctx context.Context, cmName string, ns string) (map[string]string, error) {
+	configMap, err := mw.k8sClient.CoreV1().ConfigMaps(ns).Get(ctx, cmName, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
 	return configMap.Data, nil
 }
 
-func (mw *MutatingWebhook) getDataFromSecret(secretName string, ns string) (map[string][]byte, error) {
-	secret, err := mw.k8sClient.CoreV1().Secrets(ns).Get(context.Background(), secretName, metav1.GetOptions{})
+func (mw *MutatingWebhook) getDataFromSecret(ctx context.Context, secretName string, ns string) (map[string][]byte, error) {
+	secret, err := mw.k8sClient.CoreV1().Secrets(ns).Get(ctx, secretName, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
 	return secret.Data, nil
 }
 
-func (mw *MutatingWebhook) lookForEnvFrom(envFrom []corev1.EnvFromSource, ns string) ([]corev1.EnvVar, error) {
+func (mw *MutatingWebhook) lookForEnvFrom(ctx context.Context, envFrom []corev1.EnvFromSource, ns string) ([]corev1.EnvVar, error) {
 	var envVars []corev1.EnvVar
 
 	for _, ef := range envFrom {
 		if ef.ConfigMapRef != nil {
-			data, err := mw.getDataFromConfigmap(ef.ConfigMapRef.Name, ns)
+			data, err := mw.getDataFromConfigmap(ctx, ef.ConfigMapRef.Name, ns)
 			if err != nil {
 				if apierrors.IsNotFound(err) || (ef.ConfigMapRef.Optional != nil && *ef.ConfigMapRef.Optional) {
 					continue
@@ -132,7 +132,7 @@ func (mw *MutatingWebhook) lookForEnvFrom(envFrom []corev1.EnvFromSource, ns str
 			}
 		}
 		if ef.SecretRef != nil {
-			data, err := mw.getDataFromSecret(ef.SecretRef.Name, ns)
+			data, err := mw.getDataFromSecret(ctx, ef.SecretRef.Name, ns)
 			if err != nil {
 				if apierrors.IsNotFound(err) || (ef.SecretRef.Optional != nil && *ef.SecretRef.Optional) {
 					continue
@@ -155,9 +155,9 @@ func (mw *MutatingWebhook) lookForEnvFrom(envFrom []corev1.EnvFromSource, ns str
 	return envVars, nil
 }
 
-func (mw *MutatingWebhook) lookForValueFrom(env corev1.EnvVar, ns string) (*corev1.EnvVar, error) {
+func (mw *MutatingWebhook) lookForValueFrom(ctx context.Context, env corev1.EnvVar, ns string) (*corev1.EnvVar, error) {
 	if env.ValueFrom.ConfigMapKeyRef != nil {
-		data, err := mw.getDataFromConfigmap(env.ValueFrom.ConfigMapKeyRef.Name, ns)
+		data, err := mw.getDataFromConfigmap(ctx, env.ValueFrom.ConfigMapKeyRef.Name, ns)
 		if err != nil {
 			if apierrors.IsNotFound(err) {
 				return nil, nil
@@ -174,7 +174,7 @@ func (mw *MutatingWebhook) lookForValueFrom(env corev1.EnvVar, ns string) (*core
 		}
 	}
 	if env.ValueFrom.SecretKeyRef != nil {
-		data, err := mw.getDataFromSecret(env.ValueFrom.SecretKeyRef.Name, ns)
+		data, err := mw.getDataFromSecret(ctx, env.ValueFrom.SecretKeyRef.Name, ns)
 		if err != nil {
 			if apierrors.IsNotFound(err) {
 				return nil, nil
@@ -193,7 +193,7 @@ func (mw *MutatingWebhook) lookForValueFrom(env corev1.EnvVar, ns string) (*core
 	return nil, nil
 }
 
-func (mw *MutatingWebhook) newVaultClient(vaultConfig VaultConfig) (*vault.Client, error) {
+func (mw *MutatingWebhook) newVaultClient(ctx context.Context, vaultConfig VaultConfig) (*vault.Client, error) {
 	vaultAuthAttemptsCount.WithLabelValues().Inc()
 	clientConfig := vaultapi.DefaultConfig()
 	if clientConfig.Error != nil {
@@ -212,7 +212,7 @@ func (mw *MutatingWebhook) newVaultClient(vaultConfig VaultConfig) (*vault.Clien
 
 	if vaultConfig.TLSSecret != "" {
 		tlsSecret, err := mw.k8sClient.CoreV1().Secrets(mw.namespace).Get(
-			context.Background(),
+			ctx,
 			vaultConfig.TLSSecret,
 			metav1.GetOptions{},
 		)
@@ -257,7 +257,7 @@ func (mw *MutatingWebhook) newVaultClient(vaultConfig VaultConfig) (*vault.Clien
 	}
 
 	if vaultConfig.VaultServiceAccount != "" {
-		sa, err := mw.k8sClient.CoreV1().ServiceAccounts(vaultConfig.ObjectNamespace).Get(context.Background(), vaultConfig.VaultServiceAccount, metav1.GetOptions{})
+		sa, err := mw.k8sClient.CoreV1().ServiceAccounts(vaultConfig.ObjectNamespace).Get(ctx, vaultConfig.VaultServiceAccount, metav1.GetOptions{})
 		if err != nil {
 			vaultAuthAttemptsErrorsCount.WithLabelValues("kubernetes_error").Inc()
 			return nil, errors.Wrap(err, "Failed to retrieve specified service account on namespace "+vaultConfig.ObjectNamespace)
@@ -265,7 +265,7 @@ func (mw *MutatingWebhook) newVaultClient(vaultConfig VaultConfig) (*vault.Clien
 
 		saToken := ""
 		if len(sa.Secrets) > 0 {
-			secret, err := mw.k8sClient.CoreV1().Secrets(vaultConfig.ObjectNamespace).Get(context.Background(), sa.Secrets[0].Name, metav1.GetOptions{})
+			secret, err := mw.k8sClient.CoreV1().Secrets(vaultConfig.ObjectNamespace).Get(ctx, sa.Secrets[0].Name, metav1.GetOptions{})
 			if err != nil {
 				vaultAuthAttemptsErrorsCount.WithLabelValues("kubernetes_error").Inc()
 				return nil, errors.Wrap(err, "Failed to retrieve secret for service account "+sa.Secrets[0].Name+" in namespace "+vaultConfig.ObjectNamespace)
@@ -283,7 +283,7 @@ func (mw *MutatingWebhook) newVaultClient(vaultConfig VaultConfig) (*vault.Clien
 			}
 
 			token, err := mw.k8sClient.CoreV1().ServiceAccounts(vaultConfig.ObjectNamespace).CreateToken(
-				context.Background(),
+				ctx,
 				vaultConfig.VaultServiceAccount,
 				tokenRequest,
 				metav1.CreateOptions{},
@@ -307,7 +307,8 @@ func (mw *MutatingWebhook) newVaultClient(vaultConfig VaultConfig) (*vault.Clien
 		)
 	}
 
-	client, err := vault.NewClientFromConfig(
+	client, err := vault.NewClientFromConfigWithContext(
+		ctx,
 		clientConfig,
 		clientOptions...,
 	)

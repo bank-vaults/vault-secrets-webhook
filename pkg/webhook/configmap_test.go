@@ -57,7 +57,7 @@ func TestMutateConfigMap(t *testing.T) {
 		},
 	}
 
-	err = mw.MutateConfigMap(&configMap, VaultConfig{Addr: config.Address})
+	err = mw.MutateConfigMap(t.Context(), &configMap, VaultConfig{Addr: config.Address})
 	assert.NoError(t, err)
 
 	assert.Equal(t, map[string]string{

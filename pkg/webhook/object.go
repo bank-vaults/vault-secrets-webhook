@@ -15,6 +15,7 @@
 package webhook
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -76,7 +77,7 @@ func sliceIterator(s []interface{}) iterator {
 	return c
 }
 
-func traverseObject(o interface{}, secretInjector *injector.SecretInjector) error {
+func traverseObject(ctx context.Context, o interface{}, secretInjector *injector.SecretInjector) error {
 	var iterator iterator
 
 	switch value := o.(type) {
@@ -92,7 +93,7 @@ func traverseObject(o interface{}, secretInjector *injector.SecretInjector) erro
 		switch s := e.Get().(type) {
 		case string:
 			if common.HasVaultPrefix(s) {
-				dataFromVault, err := secretInjector.GetDataFromVault(map[string]string{"data": s})
+				dataFromVault, err := secretInjector.GetDataFromVaultWithContext(ctx, map[string]string{"data": s})
 				if err != nil {
 					return err
 				}
@@ -101,7 +102,7 @@ func traverseObject(o interface{}, secretInjector *injector.SecretInjector) erro
 			} else if injector.HasInlineVaultDelimiters(s) {
 				dataFromVault := s
 				for _, vaultSecretReference := range injector.FindInlineVaultDelimiters(s) {
-					mapData, err := secretInjector.GetDataFromVault(map[string]string{"data": vaultSecretReference[1]})
+					mapData, err := secretInjector.GetDataFromVaultWithContext(ctx, map[string]string{"data": vaultSecretReference[1]})
 					if err != nil {
 						return err
 					}
@@ -110,7 +111,7 @@ func traverseObject(o interface{}, secretInjector *injector.SecretInjector) erro
 				e.Set(dataFromVault)
 			}
 		case map[string]interface{}, []interface{}:
-			err := traverseObject(e.Get(), secretInjector)
+			err := traverseObject(ctx, e.Get(), secretInjector)
 			if err != nil {
 				return err
 			}
@@ -120,10 +121,10 @@ func traverseObject(o interface{}, secretInjector *injector.SecretInjector) erro
 	return nil
 }
 
-func (mw *MutatingWebhook) MutateObject(object *unstructured.Unstructured, vaultConfig VaultConfig) error {
+func (mw *MutatingWebhook) MutateObject(ctx context.Context, object *unstructured.Unstructured, vaultConfig VaultConfig) error {
 	mw.logger.Debug(fmt.Sprintf("mutating object: %s.%s", object.GetNamespace(), object.GetName()))
 
-	vaultClient, err := mw.newVaultClient(vaultConfig)
+	vaultClient, err := mw.newVaultClient(ctx, vaultConfig)
 	if err != nil {
 		return errors.Wrap(err, "failed to create vault client")
 	}
@@ -137,5 +138,5 @@ func (mw *MutatingWebhook) MutateObject(object *unstructured.Unstructured, vault
 	}
 	secretInjector := injector.NewSecretInjector(config, vaultClient, nil, logger)
 
-	return traverseObject(object.Object, &secretInjector)
+	return traverseObject(ctx, object.Object, &secretInjector)
 }

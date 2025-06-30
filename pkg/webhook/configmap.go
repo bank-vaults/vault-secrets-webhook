@@ -15,6 +15,7 @@
 package webhook
 
 import (
+	"context"
 	"encoding/base64"
 
 	"emperror.dev/errors"
@@ -39,13 +40,13 @@ func configMapNeedsMutation(configMap *corev1.ConfigMap) bool {
 	return false
 }
 
-func (mw *MutatingWebhook) MutateConfigMap(configMap *corev1.ConfigMap, vaultConfig VaultConfig) error {
+func (mw *MutatingWebhook) MutateConfigMap(ctx context.Context, configMap *corev1.ConfigMap, vaultConfig VaultConfig) error {
 	// do an early exit and don't construct the Vault client if not needed
 	if !configMapNeedsMutation(configMap) {
 		return nil
 	}
 
-	vaultClient, err := mw.newVaultClient(vaultConfig)
+	vaultClient, err := mw.newVaultClient(ctx, vaultConfig)
 	if err != nil {
 		return errors.Wrap(err, "failed to create vault client")
 	}
@@ -59,7 +60,7 @@ func (mw *MutatingWebhook) MutateConfigMap(configMap *corev1.ConfigMap, vaultCon
 	}
 	secretInjector := injector.NewSecretInjector(config, vaultClient, nil, logger)
 
-	configMap.Data, err = secretInjector.GetDataFromVault(configMap.Data)
+	configMap.Data, err = secretInjector.GetDataFromVaultWithContext(ctx, configMap.Data)
 	if err != nil {
 		return err
 	}
@@ -69,7 +70,7 @@ func (mw *MutatingWebhook) MutateConfigMap(configMap *corev1.ConfigMap, vaultCon
 			binaryData := map[string]string{
 				key: string(value),
 			}
-			err := mw.mutateConfigMapBinaryData(configMap, binaryData, &secretInjector)
+			err := mw.mutateConfigMapBinaryData(ctx, configMap, binaryData, &secretInjector)
 			if err != nil {
 				return err
 			}
@@ -79,8 +80,8 @@ func (mw *MutatingWebhook) MutateConfigMap(configMap *corev1.ConfigMap, vaultCon
 	return nil
 }
 
-func (mw *MutatingWebhook) mutateConfigMapBinaryData(configMap *corev1.ConfigMap, data map[string]string, secretInjector *injector.SecretInjector) error {
-	mapData, err := secretInjector.GetDataFromVault(data)
+func (mw *MutatingWebhook) mutateConfigMapBinaryData(ctx context.Context, configMap *corev1.ConfigMap, data map[string]string, secretInjector *injector.SecretInjector) error {
+	mapData, err := secretInjector.GetDataFromVaultWithContext(ctx, data)
 	if err != nil {
 		return err
 	}

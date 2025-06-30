@@ -15,12 +15,11 @@
 package webhook
 
 import (
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
-
-	"log/slog"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil"
@@ -120,7 +119,7 @@ func TestNewVaultClientMetrics(t *testing.T) {
 				defer server.Close()
 			}
 
-			client, err := mw.newVaultClient(tt.vaultConfig)
+			client, err := mw.newVaultClient(t.Context(), tt.vaultConfig)
 
 			assert.Equal(t, float64(1), testutil.ToFloat64(vaultAuthAttemptsCount.WithLabelValues()), "vaultAuthAttemptsCount should be incremented")
 			if tt.expectedError {
