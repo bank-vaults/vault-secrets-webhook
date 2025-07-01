@@ -178,6 +178,7 @@ func getImageConfig(ctx context.Context, client kubernetes.Interface, container 
 	}
 
 	options := []remote.Option{
+		remote.WithContext(ctx),
 		remote.WithAuthFromKeychain(authChain),
 	}
 
