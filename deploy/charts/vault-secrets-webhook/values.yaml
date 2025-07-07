@@ -103,6 +103,9 @@ env: {}
   ## -- Define remote log server for vault-env
   # VAULT_ENV_LOG_SERVER: ""
 
+# -- Raw extra environment variables
+envRaw: {}
+
 # -- Containers to run before the webhook containers are started
 initContainers: []
   # - name: init-myservice
