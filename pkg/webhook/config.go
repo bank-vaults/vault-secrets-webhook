@@ -418,7 +418,7 @@ func parseVaultConfig(obj metav1.Object, ar *model.AdmissionReview) VaultConfig 
 	if val, err := resource.ParseQuantity(viper.GetString("VAULT_ENV_MEMORY_REQUEST")); err == nil {
 		vaultConfig.EnvMemoryRequest = val
 	} else {
-		vaultConfig.EnvMemoryRequest = resource.MustParse("128Mi")
+		vaultConfig.EnvMemoryRequest = resource.MustParse("256Mi")
 	}
 
 	if val, err := resource.ParseQuantity(viper.GetString("VAULT_ENV_CPU_LIMIT")); err == nil {
