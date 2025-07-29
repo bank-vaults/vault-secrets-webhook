@@ -19,7 +19,6 @@ ARG GOPROXY
 ENV CGO_ENABLED=0
 
 COPY go.* ./
-RUN go mod download
 
 COPY . .
 

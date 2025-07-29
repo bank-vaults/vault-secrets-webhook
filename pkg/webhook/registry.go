@@ -28,6 +28,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
+	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
 	"github.com/patrickmn/go-cache"
 	slogmulti "github.com/samber/slog-multi"
 	"github.com/spf13/viper"
@@ -79,6 +80,7 @@ type ImageRegistry interface {
 		clientset kubernetes.Interface,
 		namespace string,
 		isDisabled bool,
+		vaultConfig VaultConfig,
 		container *corev1.Container,
 		podSpec *corev1.PodSpec) (*v1.Config, error)
 }
@@ -116,6 +118,7 @@ func (r *Registry) GetImageConfig(
 	client kubernetes.Interface,
 	namespace string,
 	isDisabled bool,
+	vaultConfig VaultConfig,
 	container *corev1.Container,
 	podSpec *corev1.PodSpec,
 ) (*v1.Config, error) {
@@ -150,7 +153,7 @@ func (r *Registry) GetImageConfig(
 		containerInfo.ImagePullSecrets = []string{defaultImagePullSecret}
 	}
 
-	imageConfig, err := getImageConfig(ctx, client, containerInfo, isDisabled)
+	imageConfig, err := getImageConfig(ctx, client, containerInfo, isDisabled, vaultConfig)
 	if imageConfig != nil && allowToCache {
 		r.imageCache.Set(container.Image, imageConfig, cache.DefaultExpiration)
 	}
@@ -159,7 +162,7 @@ func (r *Registry) GetImageConfig(
 }
 
 // getImageConfig download image blob from registry
-func getImageConfig(ctx context.Context, client kubernetes.Interface, container containerInfo, isDisabled bool) (*v1.Config, error) {
+func getImageConfig(ctx context.Context, client kubernetes.Interface, container containerInfo, isDisabled bool, config VaultConfig) (*v1.Config, error) {
 	registrySkipVerify := isDisabled
 
 	chainOpts := k8schain.Options{
@@ -186,6 +189,20 @@ func getImageConfig(ctx context.Context, client kubernetes.Interface, container 
 		tr := remote.DefaultTransport.(*http.Transport).Clone()
 		tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: true} //nolint:gosec
 		options = append(options, remote.WithTransport(tr))
+	}
+
+	if config.MirrorSrc != "" && config.MirrorDest != "" {
+		var MirrorEndpoint = []transport.MirrorEndpoint{
+			transport.MirrorEndpoint{
+				Secure:   config.MirrorSecure,
+				Endpoint: config.MirrorDest,
+			},
+		}
+		Mirror := transport.Mirror{
+			OriginUrl:       config.MirrorSrc,
+			MirrorEndpoints: MirrorEndpoint,
+		}
+		options = append(options, remote.WithMirrors(Mirror))
 	}
 
 	ref, err := name.ParseReference(container.Image)
