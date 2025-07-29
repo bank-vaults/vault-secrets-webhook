@@ -89,6 +89,9 @@ type VaultConfig struct {
 	ObjectNamespace               string
 	MutateProbes                  bool
 	Token                         string
+	MirrorSrc                     string
+	MirrorDest                    string
+	MirrorSecure                  bool
 }
 
 func parseVaultConfig(obj metav1.Object, ar *model.AdmissionReview) VaultConfig {
@@ -97,6 +100,24 @@ func parseVaultConfig(obj metav1.Object, ar *model.AdmissionReview) VaultConfig 
 	}
 
 	annotations := obj.GetAnnotations()
+
+	if val, ok := annotations[common.MirrorSrc]; ok {
+		vaultConfig.MirrorSrc = val
+	} else {
+		vaultConfig.MirrorSrc = viper.GetString("MIRROR_SRC")
+	}
+
+	if val, ok := annotations[common.MirrorDest]; ok {
+		vaultConfig.MirrorDest = val
+	} else {
+		vaultConfig.MirrorDest = viper.GetString("MIRROR_DEST")
+	}
+
+	if val, ok := annotations[common.MirrorSecure]; ok {
+		vaultConfig.MirrorSecure, _ = strconv.ParseBool(val)
+	} else {
+		vaultConfig.MirrorSecure = viper.GetBool("MIRROR_SECURE")
+	}
 
 	if val := annotations[common.MutateAnnotation]; val == "skip" {
 		vaultConfig.Skip = true
@@ -509,6 +530,9 @@ func SetConfigDefaults() {
 	viper.SetDefault("VAULT_ENV_MEMORY_LIMIT", "")
 	viper.SetDefault("VAULT_ENV_LOG_SERVER", "")
 	viper.SetDefault("VAULT_NAMESPACE", "")
+	viper.SetDefault("MIRROR_SRC", "")
+	viper.SetDefault("MIRROR_DEST", "")
+	viper.SetDefault("MIRROR_SECURE", "")
 
 	viper.AutomaticEnv()
 }

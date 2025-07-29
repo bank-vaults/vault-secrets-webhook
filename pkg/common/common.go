@@ -94,6 +94,9 @@ const (
 	VaultConsulTemplateMemoryAnnotation                  = "vault.security.banzaicloud.io/vault-ct-memory"
 	VaultConsuleTemplateSecretsMountPathAnnotation       = "vault.security.banzaicloud.io/vault-ct-secrets-mount-path"
 	VaultConsuleTemplateInjectInInitcontainersAnnotation = "vault.security.banzaicloud.io/vault-ct-inject-in-initcontainers"
+	MirrorSrc                                            = "vault.security.banzaicloud.io/vault-mirror-src"
+	MirrorDest                                           = "vault.security.banzaicloud.io/vault-mirror-dest"
+	MirrorSecure                                         = "vault.security.banzaicloud.io/vault-mirror-secure"
 )
 
 func HasVaultPrefix(value string) bool {
