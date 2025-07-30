@@ -76,7 +76,7 @@ vaultEnv:
   tag: "v1.22.0"
 
 # -- Custom environment variables available to webhook
-env: {}
+env:
   ## -- Vault image
   # VAULT_IMAGE: hashicorp/vault:1.14.8
   # VAULT_CAPATH: /vault/tls
@@ -93,12 +93,12 @@ env: {}
   # VAULT_ROLE: ""
 
   ## -- Cpu requests and limits for init-containers vault-env and copy-vault-env
-  # VAULT_ENV_CPU_REQUEST: ""
-  # VAULT_ENV_CPU_LIMIT: ""
+  VAULT_ENV_CPU_REQUEST: "100m"
+  VAULT_ENV_CPU_LIMIT: "500m"
 
   ## -- Memory requests and limits for init-containers vault-env and copy-vault-env
-  # VAULT_ENV_MEMORY_REQUEST: ""
-  # VAULT_ENV_MEMORY_LIMIT: ""
+  VAULT_ENV_MEMORY_REQUEST: "256Mi"
+  VAULT_ENV_MEMORY_LIMIT: "256Mi"
 
   ## -- Define remote log server for vault-env
   # VAULT_ENV_LOG_SERVER: ""
