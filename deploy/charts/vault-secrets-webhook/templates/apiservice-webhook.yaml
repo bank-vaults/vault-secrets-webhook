@@ -164,7 +164,7 @@ webhooks:
     - pods
   failurePolicy: {{ .Values.podsFailurePolicy }}
   {{- if $podsMatchConditions }}
-  matchConditions: {{ toYaml $podsMatchConditions | nindent 4 }}
+  matchConditions: {{ toYaml $podsMatchConditions | nindent 2 }}
   {{- end }}
   namespaceSelector:
   {{- if $podsNamespaceSelector.matchLabels }}
