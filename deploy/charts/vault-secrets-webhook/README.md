@@ -124,6 +124,7 @@ The following table lists the configurable parameters of the Helm chart.
 | `vaultEnv.repository` | string | `"ghcr.io/bank-vaults/vault-env"` | Container image repo that contains the vault-env container |
 | `vaultEnv.tag` | string | `"v1.22.0"` | Container image tag for the vault-env container |
 | `env` | object | `{}` | Custom environment variables available to webhook |
+| `envRaw` | object | `{}` | Raw extra environment variables |
 | `initContainers` | list | `[]` | Containers to run before the webhook containers are started |
 | `metrics.enabled` | bool | `false` | Enable metrics service for the webhook |
 | `metrics.port` | int | `8443` | Metrics service port |
@@ -164,15 +165,20 @@ The following table lists the configurable parameters of the Helm chart.
 | `secretsFailurePolicy` | string | `"Ignore"` |  |
 | `apiSideEffectValue` | string | `"NoneOnDryRun"` | Webhook sideEffect value Check: <https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#side-effects> |
 | `namespaceSelector` | object | `{}` | Namespace selector to use, will limit webhook scope (K8s version 1.15+) |
+| `matchConditions` | object | `{}` | MatchConditions to use, allows for more complex selectors (K8s version 1.27+) Check https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#matching-requests-matchconditions |
 | `objectSelector` | object | `{}` | Object selector to use, will limit webhook scope (K8s version 1.15+) |
 | `secrets.objectSelector` | object | `{}` | Object selector for secrets (overrides `objectSelector`); Requires K8s 1.15+ |
 | `secrets.namespaceSelector` | object | `{}` | Namespace selector for secrets (overrides `objectSelector`); Requires K8s 1.15+ |
+| `secrets.matchConditions` | object | `{}` | MatchConditions to use, allows for more complex selectors (K8s version 1.27+) Check https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#matching-requests-matchconditions |
 | `pods.objectSelector` | object | `{}` | Object selector for secrets (overrides `objectSelector`); Requires K8s 1.15+ |
 | `pods.namespaceSelector` | object | `{}` | Namespace selector for secrets (overrides `objectSelector`); Requires K8s 1.15+ |
+| `pods.matchConditions` | object | `{}` | MatchConditions to use, allows for more complex selectors (K8s version 1.27+) Check https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#matching-requests-matchconditions |
 | `configMaps.objectSelector` | object | `{}` | Object selector for secrets (overrides `objectSelector`); Requires K8s 1.15+ |
 | `configMaps.namespaceSelector` | object | `{}` | Namespace selector for secrets (overrides `objectSelector`); Requires K8s 1.15+ |
+| `configMaps.matchConditions` | object | `{}` | MatchConditions to use, allows for more complex selectors (K8s version 1.27+) Check https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#matching-requests-matchconditions |
 | `customResources.objectSelector` | object | `{}` | Object selector for secrets (overrides `objectSelector`); Requires K8s 1.15+ |
 | `customResources.namespaceSelector` | object | `{}` | Namespace selector for secrets (overrides `objectSelector`); Requires K8s 1.15+ |
+| `customResources.matchConditions` | object | `{}` | MatchConditions to use, allows for more complex selectors (K8s version 1.27+) Check https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#matching-requests-matchconditions |
 | `podDisruptionBudget.enabled` | bool | `true` | Enables PodDisruptionBudget |
 | `podDisruptionBudget.minAvailable` | int | `1` | Represents the number of Pods that must be available (integer or percentage) |
 | `timeoutSeconds` | bool | `false` | Webhook timeoutSeconds value |
