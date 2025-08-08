@@ -26,12 +26,16 @@
 
 {{- $secretsNamespaceSelector := default dict }}
 {{- $secretsObjectSelector := default dict }}
+{{- $secretsMatchConditions := default dict }}
 {{- $configmapsNamespaceSelector := default dict }}
 {{- $configmapsObjectSelector := default dict }}
+{{- $configmapsMatchConditions := default dict }}
 {{- $podsNamespaceSelector := default dict }}
 {{- $podsObjectSelector := default dict }}
+{{- $podsMatchConditions := default dict }}
 {{- $crNamespaceSelector := default dict }}
 {{- $crObjectSelector := default dict }}
+{{- $crMatchConditions := default dict }}
 
 {{- if .Values.secrets.namespaceSelector }}
 {{- $secretsNamespaceSelector = .Values.secrets.namespaceSelector }}
@@ -42,6 +46,11 @@
 {{- $secretsObjectSelector = .Values.secrets.objectSelector }}
 {{- else }}
 {{- $secretsObjectSelector = .Values.objectSelector }}
+{{- end }}
+{{- if .Values.secrets.matchConditions }}
+{{- $secretsMatchConditions = .Values.secrets.matchConditions }}
+{{- else }}
+{{- $secretsMatchConditions = .Values.matchConditions }}
 {{- end }}
 
 {{- if .Values.configMaps.namespaceSelector }}
@@ -54,6 +63,11 @@
 {{- else }}
 {{- $configmapsObjectSelector = .Values.objectSelector }}
 {{- end }}
+{{- if .Values.configMaps.matchConditions }}
+{{- $configmapsMatchConditions = .Values.configMaps.matchConditions }}
+{{- else }}
+{{- $configmapsMatchConditions = .Values.matchConditions }}
+{{- end }}
 
 {{- if .Values.pods.namespaceSelector }}
 {{- $podsNamespaceSelector = .Values.pods.namespaceSelector }}
@@ -65,6 +79,11 @@
 {{- else }}
 {{- $podsObjectSelector = .Values.objectSelector }}
 {{- end }}
+{{- if .Values.pods.matchConditions }}
+{{- $podsMatchConditions = .Values.pods.matchConditions }}
+{{- else }}
+{{- $podsMatchConditions = .Values.matchConditions }}
+{{- end }}
 
 {{- if .Values.customResources.namespaceSelector }}
 {{- $crNamespaceSelector = .Values.customResources.namespaceSelector }}
@@ -75,6 +94,11 @@
 {{- $crObjectSelector = .Values.customResources.objectSelector }}
 {{- else }}
 {{- $crObjectSelector = .Values.objectSelector }}
+{{- end }}
+{{- if .Values.customResources.matchConditions }}
+{{- $crMatchConditions = .Values.customResources.matchConditions }}
+{{- else }}
+{{- $crMatchConditions = .Values.matchConditions }}
 {{- end }}
 
 
@@ -139,6 +163,9 @@ webhooks:
     resources:
     - pods
   failurePolicy: {{ .Values.podsFailurePolicy }}
+  {{- if $podsMatchConditions }}
+  matchConditions: {{ toYaml $podsMatchConditions | nindent 2 }}
+  {{- end }}
   namespaceSelector:
   {{- if $podsNamespaceSelector.matchLabels }}
     matchLabels:
@@ -204,6 +231,9 @@ webhooks:
     resources:
     - secrets
   failurePolicy: {{ .Values.secretsFailurePolicy }}
+  {{- if $secretsMatchConditions }}
+  matchConditions: {{ toYaml $secretsMatchConditions | nindent 2 }}
+  {{- end }}
   namespaceSelector:
   {{- if $secretsNamespaceSelector.matchLabels }}
     matchLabels:
@@ -274,6 +304,9 @@ webhooks:
       resources:
         - configmaps
   failurePolicy: {{ .Values.configmapFailurePolicy | default .Values.configMapFailurePolicy }}
+  {{- if $configmapsMatchConditions }}
+  matchConditions: {{ toYaml $configmapsMatchConditions | nindent 2 }}
+  {{- end }}
   namespaceSelector:
   {{- if $configmapsNamespaceSelector.matchLabels }}
     matchLabels:
@@ -341,6 +374,9 @@ webhooks:
     resources:
 {{ toYaml .Values.customResourceMutations | indent 6 }}
   failurePolicy: {{ .Values.customResourcesFailurePolicy }}
+  {{- if $crMatchConditions }}
+  matchConditions: {{ toYaml $crMatchConditions | nindent 2 }}
+  {{- end }}
   namespaceSelector:
   {{- if $crNamespaceSelector.matchLabels }}
     matchLabels:
