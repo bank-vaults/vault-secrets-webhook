@@ -248,6 +248,13 @@ namespaceSelector:
   # matchLabels:
   #   vault-injection: enabled
 
+# -- MatchConditions to use, allows for more complex selectors (K8s version 1.27+)
+# Check https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#matching-requests-matchconditions
+matchConditions: {}
+  # - name: 'example-exclude-resources-without-role'
+  #   expression: '"vault.security.banzaicloud.io/vault-role" in object.metadata.annotations' # Only match resources that have a vault-role annotation
+
+
 # -- Object selector to use, will limit webhook scope (K8s version 1.15+)
 objectSelector: {}
   # matchExpressions:
@@ -263,24 +270,36 @@ secrets:
   objectSelector: {}
   # -- Namespace selector for secrets (overrides `objectSelector`); Requires K8s 1.15+
   namespaceSelector: {}
+  # -- MatchConditions to use, allows for more complex selectors (K8s version 1.27+)
+  # Check https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#matching-requests-matchconditions
+  matchConditions: {}
 
 pods:
   # -- Object selector for secrets (overrides `objectSelector`); Requires K8s 1.15+
   objectSelector: {}
   # -- Namespace selector for secrets (overrides `objectSelector`); Requires K8s 1.15+
   namespaceSelector: {}
+  # -- MatchConditions to use, allows for more complex selectors (K8s version 1.27+)
+  # Check https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#matching-requests-matchconditions
+  matchConditions: {}
 
 configMaps:
   # -- Object selector for secrets (overrides `objectSelector`); Requires K8s 1.15+
   objectSelector: {}
   # -- Namespace selector for secrets (overrides `objectSelector`); Requires K8s 1.15+
   namespaceSelector: {}
+  # -- MatchConditions to use, allows for more complex selectors (K8s version 1.27+)
+  # Check https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#matching-requests-matchconditions
+  matchConditions: {}
 
 customResources:
   # -- Object selector for secrets (overrides `objectSelector`); Requires K8s 1.15+
   objectSelector: {}
   # -- Namespace selector for secrets (overrides `objectSelector`); Requires K8s 1.15+
   namespaceSelector: {}
+  # -- MatchConditions to use, allows for more complex selectors (K8s version 1.27+)
+  # Check https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#matching-requests-matchconditions
+  matchConditions: {}
 
 podDisruptionBudget:
   # -- Enables PodDisruptionBudget
