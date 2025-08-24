@@ -15,7 +15,7 @@ require (
 	github.com/samber/slog-multi v1.4.1
 	github.com/slok/kubewebhook/v2 v2.7.0
 	github.com/spf13/viper v1.20.1
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.0
 	k8s.io/api v0.33.4
 	k8s.io/apimachinery v0.33.4
 	k8s.io/client-go v0.33.4
