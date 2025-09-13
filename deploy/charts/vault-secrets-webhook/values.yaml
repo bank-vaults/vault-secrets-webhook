@@ -236,6 +236,10 @@ secretsFailurePolicy: Ignore
 # Check: <https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#side-effects>
 apiSideEffectValue: NoneOnDryRun
 
+# -- Enables the webhook to ignore resources in the namespace it is deployed to.
+# Set to `false` to enable mutations within the namespace the webhook runs in.
+ignoreReleaseNamespace: true
+
 # -- Namespace selector to use, will limit webhook scope (K8s version 1.15+)
 namespaceSelector:
   # @ignored
