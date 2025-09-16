@@ -175,10 +175,12 @@ webhooks:
     {{- if $podsNamespaceSelector.matchExpressions }}
 {{ toYaml $podsNamespaceSelector.matchExpressions | indent 4 }}
     {{- end }}
+    {{- if .Values.ignoreReleaseNamespace }}
     - key: kubernetes.io/metadata.name
       operator: NotIn
       values:
       - {{ .Release.Namespace }}
+    {{- end }}
 {{- if semverCompare ">=1.15-0" (include "vault-secrets-webhook.capabilities.kubeVersion" .) }}
   objectSelector:
   {{- if $podsObjectSelector.matchLabels }}
@@ -243,10 +245,12 @@ webhooks:
     {{- if $secretsNamespaceSelector.matchExpressions }}
 {{ toYaml $secretsNamespaceSelector.matchExpressions | indent 4 }}
     {{- end }}
+    {{- if .Values.ignoreReleaseNamespace }}
     - key: kubernetes.io/metadata.name
       operator: NotIn
       values:
       - {{ .Release.Namespace }}
+    {{- end }}
 {{- if semverCompare ">=1.15-0" (include "vault-secrets-webhook.capabilities.kubeVersion" .) }}
   objectSelector:
   {{- if $secretsObjectSelector.matchLabels }}
@@ -316,10 +320,12 @@ webhooks:
   {{- if $configmapsNamespaceSelector.matchExpressions }}
 {{ toYaml $configmapsNamespaceSelector.matchExpressions | indent 4 }}
   {{- end }}
+    {{- if .Values.ignoreReleaseNamespace }}
     - key: kubernetes.io/metadata.name
       operator: NotIn
       values:
       - {{ .Release.Namespace }}
+    {{- end }}
 {{- if semverCompare ">=1.15-0" (include "vault-secrets-webhook.capabilities.kubeVersion" .) }}
   objectSelector:
   {{- if $configmapsObjectSelector.matchLabels }}
@@ -386,10 +392,12 @@ webhooks:
     {{- if $crNamespaceSelector.matchExpressions }}
 {{ toYaml $crNamespaceSelector.matchExpressions | indent 4 }}
     {{- end }}
+    {{- if .Values.ignoreReleaseNamespace }}
     - key: kubernetes.io/metadata.name
       operator: NotIn
       values:
       - {{ .Release.Namespace }}
+    {{- end }}
 {{- if semverCompare ">=1.15-0" (include "vault-secrets-webhook.capabilities.kubeVersion" .) }}
   objectSelector:
   {{- if $crObjectSelector.matchLabels }}
