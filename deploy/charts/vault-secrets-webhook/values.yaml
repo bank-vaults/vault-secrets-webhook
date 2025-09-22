@@ -92,6 +92,9 @@ env: {}
   ## -- Define the webhook's role in Vault used for authentication, if not defined individually in resources by annotations
   # VAULT_ROLE: ""
 
+  ## -- Skip mutating for not POD resources with default role if does not set VAULT_ROLE
+  # VAULT_SKIP_DEFAULT_ROLE: "false"
+
   ## -- Cpu requests and limits for init-containers vault-env and copy-vault-env
   # VAULT_ENV_CPU_REQUEST: ""
   # VAULT_ENV_CPU_LIMIT: ""
