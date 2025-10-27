@@ -120,6 +120,10 @@ func parseVaultConfig(obj metav1.Object, ar *model.AdmissionReview) VaultConfig 
 			case *corev1.Pod:
 				vaultConfig.Role = p.Spec.ServiceAccountName
 			default:
+				if viper.GetBool("vault_skip_default_role") {
+					vaultConfig.Skip = true
+					return vaultConfig
+				}
 				vaultConfig.Role = "default"
 			}
 		}
@@ -476,6 +480,7 @@ func SetConfigDefaults() {
 	viper.SetDefault("vault_path", "kubernetes")
 	viper.SetDefault("vault_auth_method", "jwt")
 	viper.SetDefault("vault_role", "")
+	viper.SetDefault("vault_skip_default_role", "false")
 	viper.SetDefault("vault_tls_secret", "")
 	viper.SetDefault("vault_client_timeout", "10s")
 	viper.SetDefault("vault_agent", "false")
