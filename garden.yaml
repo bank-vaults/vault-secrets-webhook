@@ -24,8 +24,6 @@ kind: Build
 type: container
 name: vault-secrets-webhook
 exclude:
-  - .direnv/**/*
-  - .devenv/**/*
   - build/**/*
   - e2e/**/*
 
