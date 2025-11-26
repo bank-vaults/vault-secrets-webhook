@@ -1,7 +1,4 @@
-/.devenv/
-/.direnv/
 /.garden/
-/.pre-commit-config.yaml
 /bin/
 /build/
 /tmp/
