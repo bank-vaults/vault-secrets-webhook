@@ -241,6 +241,13 @@ func (mw *MutatingWebhook) mutateContainers(ctx context.Context, containers []co
 	mutated := false
 
 	for i, container := range containers {
+		// If mutate-containers annotation is set, check if this container should be mutated
+		if len(vaultConfig.MutateContainers) > 0 {
+			if !vaultConfig.MutateContainers[container.Name] {
+				continue
+			}
+		}
+
 		var envVars []corev1.EnvVar
 		if len(container.EnvFrom) > 0 {
 			envFrom, err := mw.lookForEnvFrom(ctx, container.EnvFrom, vaultConfig.ObjectNamespace)

@@ -694,6 +694,270 @@ func Test_mutatingWebhook_mutateContainers(t *testing.T) {
 			mutated: true,
 			wantErr: false,
 		},
+		{
+			name: "Will mutate only specified containers when mutate-containers annotation is set",
+			fields: fields{
+				k8sClient: fake.NewSimpleClientset(),
+				registry: &MockRegistry{
+					Image: v1.Config{},
+				},
+			},
+			args: args{
+				containers: []corev1.Container{
+					{
+						Name:    "container1",
+						Image:   "myimage",
+						Command: []string{"/bin/bash"},
+						Args:    nil,
+						Env: []corev1.EnvVar{
+							{
+								Name:  "myvar",
+								Value: "vault:secrets",
+							},
+						},
+					},
+					{
+						Name:    "container2",
+						Image:   "myimage",
+						Command: []string{"/bin/bash"},
+						Args:    nil,
+						Env: []corev1.EnvVar{
+							{
+								Name:  "myvar",
+								Value: "vault:secrets",
+							},
+						},
+					},
+					{
+						Name:    "container3",
+						Image:   "myimage",
+						Command: []string{"/bin/bash"},
+						Args:    nil,
+						Env: []corev1.EnvVar{
+							{
+								Name:  "myvar",
+								Value: "vault:secrets",
+							},
+						},
+					},
+				},
+				vaultConfig: VaultConfig{
+					Addr:                 "addr",
+					SkipVerify:           false,
+					Path:                 "path",
+					Role:                 "role",
+					AuthMethod:           "jwt",
+					IgnoreMissingSecrets: "ignoreMissingSecrets",
+					VaultEnvPassThrough:  "vaultEnvPassThrough",
+					EnableJSONLog:        "enableJSONLog",
+					ClientTimeout:        10 * time.Second,
+					MutateContainers: map[string]bool{
+						"container1": true,
+						"container3": true,
+					},
+				},
+			},
+			wantedContainers: []corev1.Container{
+				{
+					Name:         "container1",
+					Image:        "myimage",
+					Command:      []string{"/vault/vault-env"},
+					Args:         []string{"/bin/bash"},
+					VolumeMounts: []corev1.VolumeMount{{Name: "vault-env", MountPath: "/vault/"}},
+					Env: []corev1.EnvVar{
+						{Name: "myvar", Value: "vault:secrets"},
+						{Name: "VAULT_ADDR", Value: "addr"},
+						{Name: "VAULT_SKIP_VERIFY", Value: "false"},
+						{Name: "VAULT_AUTH_METHOD", Value: "jwt"},
+						{Name: "VAULT_PATH", Value: "path"},
+						{Name: "VAULT_ROLE", Value: "role"},
+						{Name: "VAULT_IGNORE_MISSING_SECRETS", Value: "ignoreMissingSecrets"},
+						{Name: "VAULT_ENV_PASSTHROUGH", Value: "vaultEnvPassThrough"},
+						{Name: "VAULT_JSON_LOG", Value: "enableJSONLog"},
+						{Name: "VAULT_CLIENT_TIMEOUT", Value: "10s"},
+					},
+				},
+				{
+					Name:    "container2",
+					Image:   "myimage",
+					Command: []string{"/bin/bash"},
+					Args:    nil,
+					Env: []corev1.EnvVar{
+						{
+							Name:  "myvar",
+							Value: "vault:secrets",
+						},
+					},
+				},
+				{
+					Name:         "container3",
+					Image:        "myimage",
+					Command:      []string{"/vault/vault-env"},
+					Args:         []string{"/bin/bash"},
+					VolumeMounts: []corev1.VolumeMount{{Name: "vault-env", MountPath: "/vault/"}},
+					Env: []corev1.EnvVar{
+						{Name: "myvar", Value: "vault:secrets"},
+						{Name: "VAULT_ADDR", Value: "addr"},
+						{Name: "VAULT_SKIP_VERIFY", Value: "false"},
+						{Name: "VAULT_AUTH_METHOD", Value: "jwt"},
+						{Name: "VAULT_PATH", Value: "path"},
+						{Name: "VAULT_ROLE", Value: "role"},
+						{Name: "VAULT_IGNORE_MISSING_SECRETS", Value: "ignoreMissingSecrets"},
+						{Name: "VAULT_ENV_PASSTHROUGH", Value: "vaultEnvPassThrough"},
+						{Name: "VAULT_JSON_LOG", Value: "enableJSONLog"},
+						{Name: "VAULT_CLIENT_TIMEOUT", Value: "10s"},
+					},
+				},
+			},
+			mutated: true,
+			wantErr: false,
+		},
+		{
+			name: "Will mutate all containers when mutate-containers annotation is not set",
+			fields: fields{
+				k8sClient: fake.NewSimpleClientset(),
+				registry: &MockRegistry{
+					Image: v1.Config{},
+				},
+			},
+			args: args{
+				containers: []corev1.Container{
+					{
+						Name:    "container1",
+						Image:   "myimage",
+						Command: []string{"/bin/bash"},
+						Args:    nil,
+						Env: []corev1.EnvVar{
+							{
+								Name:  "myvar",
+								Value: "vault:secrets",
+							},
+						},
+					},
+					{
+						Name:    "container2",
+						Image:   "myimage",
+						Command: []string{"/bin/bash"},
+						Args:    nil,
+						Env: []corev1.EnvVar{
+							{
+								Name:  "myvar",
+								Value: "vault:secrets",
+							},
+						},
+					},
+				},
+				vaultConfig: VaultConfig{
+					Addr:                 "addr",
+					SkipVerify:           false,
+					Path:                 "path",
+					Role:                 "role",
+					AuthMethod:           "jwt",
+					IgnoreMissingSecrets: "ignoreMissingSecrets",
+					VaultEnvPassThrough:  "vaultEnvPassThrough",
+					EnableJSONLog:        "enableJSONLog",
+					ClientTimeout:        10 * time.Second,
+					MutateContainers:     make(map[string]bool), // empty map - annotation not set
+				},
+			},
+			wantedContainers: []corev1.Container{
+				{
+					Name:         "container1",
+					Image:        "myimage",
+					Command:      []string{"/vault/vault-env"},
+					Args:         []string{"/bin/bash"},
+					VolumeMounts: []corev1.VolumeMount{{Name: "vault-env", MountPath: "/vault/"}},
+					Env: []corev1.EnvVar{
+						{Name: "myvar", Value: "vault:secrets"},
+						{Name: "VAULT_ADDR", Value: "addr"},
+						{Name: "VAULT_SKIP_VERIFY", Value: "false"},
+						{Name: "VAULT_AUTH_METHOD", Value: "jwt"},
+						{Name: "VAULT_PATH", Value: "path"},
+						{Name: "VAULT_ROLE", Value: "role"},
+						{Name: "VAULT_IGNORE_MISSING_SECRETS", Value: "ignoreMissingSecrets"},
+						{Name: "VAULT_ENV_PASSTHROUGH", Value: "vaultEnvPassThrough"},
+						{Name: "VAULT_JSON_LOG", Value: "enableJSONLog"},
+						{Name: "VAULT_CLIENT_TIMEOUT", Value: "10s"},
+					},
+				},
+				{
+					Name:         "container2",
+					Image:        "myimage",
+					Command:      []string{"/vault/vault-env"},
+					Args:         []string{"/bin/bash"},
+					VolumeMounts: []corev1.VolumeMount{{Name: "vault-env", MountPath: "/vault/"}},
+					Env: []corev1.EnvVar{
+						{Name: "myvar", Value: "vault:secrets"},
+						{Name: "VAULT_ADDR", Value: "addr"},
+						{Name: "VAULT_SKIP_VERIFY", Value: "false"},
+						{Name: "VAULT_AUTH_METHOD", Value: "jwt"},
+						{Name: "VAULT_PATH", Value: "path"},
+						{Name: "VAULT_ROLE", Value: "role"},
+						{Name: "VAULT_IGNORE_MISSING_SECRETS", Value: "ignoreMissingSecrets"},
+						{Name: "VAULT_ENV_PASSTHROUGH", Value: "vaultEnvPassThrough"},
+						{Name: "VAULT_JSON_LOG", Value: "enableJSONLog"},
+						{Name: "VAULT_CLIENT_TIMEOUT", Value: "10s"},
+					},
+				},
+			},
+			mutated: true,
+			wantErr: false,
+		},
+		{
+			name: "Will not mutate container not in mutate-containers list",
+			fields: fields{
+				k8sClient: fake.NewSimpleClientset(),
+				registry: &MockRegistry{
+					Image: v1.Config{},
+				},
+			},
+			args: args{
+				containers: []corev1.Container{
+					{
+						Name:    "container1",
+						Image:   "myimage",
+						Command: []string{"/bin/bash"},
+						Args:    nil,
+						Env: []corev1.EnvVar{
+							{
+								Name:  "myvar",
+								Value: "vault:secrets",
+							},
+						},
+					},
+				},
+				vaultConfig: VaultConfig{
+					Addr:                 "addr",
+					SkipVerify:           false,
+					Path:                 "path",
+					Role:                 "role",
+					AuthMethod:           "jwt",
+					IgnoreMissingSecrets: "ignoreMissingSecrets",
+					VaultEnvPassThrough:  "vaultEnvPassThrough",
+					EnableJSONLog:        "enableJSONLog",
+					ClientTimeout:        10 * time.Second,
+					MutateContainers: map[string]bool{
+						"other-container": true, // container1 is not in the list
+					},
+				},
+			},
+			wantedContainers: []corev1.Container{
+				{
+					Name:    "container1",
+					Image:   "myimage",
+					Command: []string{"/bin/bash"},
+					Args:    nil,
+					Env: []corev1.EnvVar{
+						{
+							Name:  "myvar",
+							Value: "vault:secrets",
+						},
+					},
+				},
+			},
+			mutated: false,
+			wantErr: false,
+		},
 	}
 
 	for _, tt := range tests {
