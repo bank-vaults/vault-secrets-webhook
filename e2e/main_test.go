@@ -45,7 +45,7 @@ import (
 // Upgrade this when a new version is released
 const (
 	defaultTimeout       = 2 * time.Minute
-	vaultOperatorVersion = "1.23.0"
+	vaultOperatorVersion = "1.23.1"
 )
 
 var testenv env.Environment
