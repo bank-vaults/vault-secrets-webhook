@@ -123,11 +123,11 @@ deps: bin/golangci-lint bin/licensei bin/kind bin/kurun bin/helm bin/helm-docs
 deps: ## Install dependencies
 
 # Dependency versions
-GOLANGCI_LINT_VERSION = 2.0.2
+GOLANGCI_LINT_VERSION = 2.7.2
 LICENSEI_VERSION = 0.9.0
-KIND_VERSION = 0.24.0
+KIND_VERSION = 0.30.0
 KURUN_VERSION = 0.7.0
-HELM_VERSION = 3.16.1
+HELM_VERSION = 4.0.1
 HELM_DOCS_VERSION = 1.14.2
 
 # Dependency binaries

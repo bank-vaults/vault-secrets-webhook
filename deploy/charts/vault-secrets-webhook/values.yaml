@@ -73,7 +73,7 @@ vaultEnv:
   # -- Container image repo that contains the vault-env container
   repository: ghcr.io/bank-vaults/vault-env
   # -- Container image tag for the vault-env container
-  tag: "v1.22.0"
+  tag: "v1.22.1"
 
 # -- Custom environment variables available to webhook
 env: {}
