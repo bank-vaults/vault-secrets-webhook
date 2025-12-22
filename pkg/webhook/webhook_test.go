@@ -56,7 +56,7 @@ func TestNewVaultClientMetrics(t *testing.T) {
 				ObjectNamespace:     "test-namespace",
 			},
 			setupK8s: func(t *testing.T) *fake.Clientset {
-				return fake.NewSimpleClientset(
+				return fake.NewClientset(
 					&corev1.ServiceAccount{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      "test-sa",
@@ -98,7 +98,7 @@ func TestNewVaultClientMetrics(t *testing.T) {
 				ObjectNamespace:     "test-namespace",
 			},
 			setupK8s: func(t *testing.T) *fake.Clientset {
-				return fake.NewSimpleClientset()
+				return fake.NewClientset()
 			},
 			expectedError: true,
 		},
