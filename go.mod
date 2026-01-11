@@ -12,7 +12,7 @@ require (
 	github.com/hashicorp/vault/api v1.22.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/prometheus/client_golang v1.23.2
-	github.com/samber/slog-multi v1.6.0
+	github.com/samber/slog-multi v1.7.0
 	github.com/slok/kubewebhook/v2 v2.7.0
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
