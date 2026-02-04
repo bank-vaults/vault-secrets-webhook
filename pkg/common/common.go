@@ -29,6 +29,7 @@ const (
 	RegistrySkipVerifyAnnotation          = "vault.security.banzaicloud.io/registry-skip-verify"
 	MutateAnnotation                      = "vault.security.banzaicloud.io/mutate"
 	MutateProbesAnnotation                = "vault.security.banzaicloud.io/mutate-probes"
+	MutateContainersAnnotation            = "vault.security.banzaicloud.io/mutate-containers"
 
 	// Vault-env/Secret-init annotations
 	// NOTE: Change these once vault-env has been replaced with secret-init
