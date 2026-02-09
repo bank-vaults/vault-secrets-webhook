@@ -16,6 +16,7 @@ package webhook
 
 import (
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/slok/kubewebhook/v2/pkg/model"
@@ -89,6 +90,7 @@ type VaultConfig struct {
 	ObjectNamespace               string
 	MutateProbes                  bool
 	Token                         string
+	MutateContainers              map[string]bool
 }
 
 func parseVaultConfig(obj metav1.Object, ar *model.AdmissionReview) VaultConfig {
@@ -447,6 +449,18 @@ func parseVaultConfig(obj metav1.Object, ar *model.AdmissionReview) VaultConfig 
 	}
 
 	vaultConfig.Token = viper.GetString("vault_token")
+
+	// Parse mutate-containers annotation
+	vaultConfig.MutateContainers = make(map[string]bool)
+	if val, ok := annotations[common.MutateContainersAnnotation]; ok && val != "" {
+		containerNames := strings.Split(val, ",")
+		for _, name := range containerNames {
+			trimmedName := strings.TrimSpace(name)
+			if trimmedName != "" {
+				vaultConfig.MutateContainers[trimmedName] = true
+			}
+		}
+	}
 
 	return vaultConfig
 }

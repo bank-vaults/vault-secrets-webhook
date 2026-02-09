@@ -257,7 +257,93 @@ func TestPodMutation(t *testing.T) {
 		}).
 		Feature()
 
-	testenv.Test(t, deployment, deploymentSeccontext, deploymentTemplating, deploymentInitSeccontext)
+	deploymentMutateContainers := applyResource(features.New("deployment-mutate-containers"), "deployment-mutate-containers.yaml").
+		Assess("available", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+			deployment := &appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{Name: "test-deployment-mutate-containers", Namespace: cfg.Namespace()},
+			}
+
+			// wait for the deployment to become available
+			err := wait.For(conditions.New(cfg.Client().Resources()).DeploymentConditionMatch(deployment, appsv1.DeploymentAvailable, v1.ConditionTrue), wait.WithTimeout(2*time.Minute))
+			require.NoError(t, err)
+
+			return ctx
+		}).
+		Assess("only specified containers are mutated", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+			r := cfg.Client().Resources()
+
+			pods := &v1.PodList{}
+
+			err := r.List(ctx, pods, resources.WithLabelSelector("app.kubernetes.io/name=test-deployment-mutate-containers"))
+			require.NoError(t, err)
+
+			if pods == nil || len(pods.Items) == 0 {
+				t.Fatal("no pods found")
+			}
+
+			// wait for the container to become available
+			err = wait.For(conditions.New(r).ContainersReady(&pods.Items[0]), wait.WithTimeout(2*time.Minute))
+			require.NoError(t, err)
+
+			pod := pods.Items[0]
+
+			// Check that alpine container was mutated (should have /vault/vault-env in command)
+			alpineContainer := findContainerByName(pod.Spec.Containers, "alpine")
+			require.NotNil(t, alpineContainer, "alpine container not found")
+			require.Greater(t, len(alpineContainer.Command), 0, "alpine container should have command")
+			assert.Equal(t, "/vault/vault-env", alpineContainer.Command[0], "alpine container should be mutated")
+			// Check for vault-env volumeMount
+			assert.True(t, hasVolumeMount(alpineContainer.VolumeMounts, "vault-env"), "alpine container should have vault-env volumeMount")
+
+			// Check that redis container was mutated (should have /vault/vault-env in command)
+			redisContainer := findContainerByName(pod.Spec.Containers, "redis")
+			require.NotNil(t, redisContainer, "redis container not found")
+			require.Greater(t, len(redisContainer.Command), 0, "redis container should have command")
+			assert.Equal(t, "/vault/vault-env", redisContainer.Command[0], "redis container should be mutated")
+			// Check for vault-env volumeMount
+			assert.True(t, hasVolumeMount(redisContainer.VolumeMounts, "vault-env"), "redis container should have vault-env volumeMount")
+
+			// Check that nginx container was NOT mutated (should not have /vault/vault-env in command)
+			nginxContainer := findContainerByName(pod.Spec.Containers, "nginx")
+			require.NotNil(t, nginxContainer, "nginx container not found")
+			if len(nginxContainer.Command) > 0 {
+				assert.NotEqual(t, "/vault/vault-env", nginxContainer.Command[0], "nginx container should NOT be mutated")
+			}
+			// Check absence of vault-env volumeMount
+			assert.False(t, hasVolumeMount(nginxContainer.VolumeMounts, "vault-env"), "nginx container should NOT have vault-env volumeMount")
+
+			// Check that init-ubuntu container was NOT mutated (not specified in annotation)
+			initContainer := findContainerByName(pod.Spec.InitContainers, "init-ubuntu")
+			require.NotNil(t, initContainer, "init-ubuntu container not found")
+			if len(initContainer.Command) > 0 {
+				assert.NotEqual(t, "/vault/vault-env", initContainer.Command[0], "init-ubuntu container should NOT be mutated")
+			}
+			// Check absence of vault-env volumeMount
+			assert.False(t, hasVolumeMount(initContainer.VolumeMounts, "vault-env"), "init-ubuntu container should NOT have vault-env volumeMount")
+
+			return ctx
+		}).
+		Feature()
+
+	testenv.Test(t, deployment, deploymentSeccontext, deploymentTemplating, deploymentInitSeccontext, deploymentMutateContainers)
+}
+
+func findContainerByName(containers []v1.Container, name string) *v1.Container {
+	for i := range containers {
+		if containers[i].Name == name {
+			return &containers[i]
+		}
+	}
+	return nil
+}
+
+func hasVolumeMount(volumeMounts []v1.VolumeMount, name string) bool {
+	for _, vm := range volumeMounts {
+		if vm.Name == name {
+			return true
+		}
+	}
+	return false
 }
 
 func applyResource(builder *features.FeatureBuilder, file string) *features.FeatureBuilder {
