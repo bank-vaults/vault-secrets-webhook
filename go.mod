@@ -7,7 +7,7 @@ require (
 	github.com/bank-vaults/vault-sdk v0.11.2
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/google/go-cmp v0.7.0
-	github.com/google/go-containerregistry v0.21.1
+	github.com/google/go-containerregistry v0.21.2
 	github.com/google/go-containerregistry/pkg/authn/k8schain v0.0.0-20251124222020-e075f209120b
 	github.com/hashicorp/vault/api v1.22.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
