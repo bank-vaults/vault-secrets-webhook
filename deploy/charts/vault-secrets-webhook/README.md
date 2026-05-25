@@ -122,7 +122,7 @@ The following table lists the configurable parameters of the Helm chart.
 | `webhookClientConfig.useUrl` | bool | `false` | Use url if webhook should be contacted over loadbalancer or ingress instead of service object. By default, the mutating webhook uses the service of the webhook directly to contact webhook. |
 | `webhookClientConfig.url` | string | `"https://example.com"` | Set the url how the webhook should be contacted, including the protocol |
 | `vaultEnv.repository` | string | `"ghcr.io/bank-vaults/vault-env"` | Container image repo that contains the vault-env container |
-| `vaultEnv.tag` | string | `"v1.22.1"` | Container image tag for the vault-env container |
+| `vaultEnv.tag` | string | `"v1.23.0"` | Container image tag for the vault-env container |
 | `env` | object | `{}` | Custom environment variables available to webhook |
 | `envRaw` | object | `{}` | Raw extra environment variables |
 | `initContainers` | list | `[]` | Containers to run before the webhook containers are started |
@@ -164,6 +164,7 @@ The following table lists the configurable parameters of the Helm chart.
 | `podsFailurePolicy` | string | `"Ignore"` |  |
 | `secretsFailurePolicy` | string | `"Ignore"` |  |
 | `apiSideEffectValue` | string | `"NoneOnDryRun"` | Webhook sideEffect value Check: <https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#side-effects> |
+| `ignoreReleaseNamespace` | bool | `true` | Enables the webhook to ignore resources in the namespace it is deployed to. Set to `false` to enable mutations within the namespace the webhook runs in. |
 | `namespaceSelector` | object | `{}` | Namespace selector to use, will limit webhook scope (K8s version 1.15+) |
 | `matchConditions` | object | `{}` | MatchConditions to use, allows for more complex selectors (K8s version 1.27+) Check https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#matching-requests-matchconditions |
 | `objectSelector` | object | `{}` | Object selector to use, will limit webhook scope (K8s version 1.15+) |
