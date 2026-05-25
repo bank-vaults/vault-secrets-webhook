@@ -123,11 +123,11 @@ deps: bin/golangci-lint bin/licensei bin/kind bin/kurun bin/helm bin/helm-docs
 deps: ## Install dependencies
 
 # Dependency versions
-GOLANGCI_LINT_VERSION = 2.10.1
+GOLANGCI_LINT_VERSION = 2.12.2
 LICENSEI_VERSION = 0.9.0
-KIND_VERSION = 0.30.0
+KIND_VERSION = 0.31.0
 KURUN_VERSION = 0.7.0
-HELM_VERSION = 4.0.1
+HELM_VERSION = 4.2.0
 HELM_DOCS_VERSION = 1.14.2
 
 # Dependency binaries
@@ -154,7 +154,7 @@ endif
 
 bin/golangci-lint:
 	@mkdir -p bin
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | bash -s -- v${GOLANGCI_LINT_VERSION}
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/v${GOLANGCI_LINT_VERSION}/install.sh | bash -s -- -b ./bin v${GOLANGCI_LINT_VERSION}
 
 bin/licensei:
 	@mkdir -p bin

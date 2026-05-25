@@ -73,12 +73,12 @@ vaultEnv:
   # -- Container image repo that contains the vault-env container
   repository: ghcr.io/bank-vaults/vault-env
   # -- Container image tag for the vault-env container
-  tag: "v1.22.1"
+  tag: "v1.23.0"
 
 # -- Custom environment variables available to webhook
 env: {}
   ## -- Vault image
-  # VAULT_IMAGE: hashicorp/vault:1.14.8
+  # VAULT_IMAGE: hashicorp/vault:2.0.1
   # VAULT_CAPATH: /vault/tls
 
   ## -- Used when the pod that should get secret injected does not specify an imagePullSecret

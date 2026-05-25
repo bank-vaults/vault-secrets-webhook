@@ -1,5 +1,5 @@
 env:
-  VAULT_IMAGE: hashicorp/vault:1.14.8
+  VAULT_IMAGE: hashicorp/vault:2.0.1
 
 replicaCount: 1
 
