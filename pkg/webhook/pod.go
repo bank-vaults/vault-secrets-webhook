@@ -707,6 +707,7 @@ func getInitContainers(originalContainers []corev1.Container, podSecurityContext
 			"SETGID",
 			"SETPCAP",
 			"SETUID",
+			"IPC_LOCK",
 		}
 
 		containers = append(containers, corev1.Container{

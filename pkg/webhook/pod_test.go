@@ -762,6 +762,7 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 				"SETGID",
 				"SETPCAP",
 				"SETUID",
+				"IPC_LOCK",
 			},
 			Drop: []corev1.Capability{
 				"ALL",
