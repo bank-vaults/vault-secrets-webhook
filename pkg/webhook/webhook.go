@@ -32,6 +32,7 @@ import (
 	"github.com/slok/kubewebhook/v2/pkg/log"
 	"github.com/slok/kubewebhook/v2/pkg/model"
 	"github.com/slok/kubewebhook/v2/pkg/webhook/mutating"
+	"github.com/spf13/viper"
 	authenticationv1 "k8s.io/api/authentication/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -193,12 +194,32 @@ func (mw *MutatingWebhook) lookForValueFrom(ctx context.Context, env corev1.EnvV
 	return nil, nil
 }
 
+func vaultAddrPolicy() common.AddrPolicy {
+	allowlist := common.SplitAndTrim(viper.GetString("vault_addr_allowlist"))
+	if addr := viper.GetString("vault_addr"); addr != "" {
+		allowlist = append(allowlist, addr) // trusted operator default is implicitly allowed
+	}
+
+	return common.AddrPolicy{
+		Allowlist:    allowlist,
+		AllowPrivate: viper.GetBool("vault_allow_private_addr"),
+	}
+}
+
 func (mw *MutatingWebhook) newVaultClient(ctx context.Context, vaultConfig VaultConfig) (*vault.Client, error) {
 	vaultAuthAttemptsCount.WithLabelValues().Inc()
 	clientConfig := vaultapi.DefaultConfig()
 	if clientConfig.Error != nil {
 		vaultAuthAttemptsErrorsCount.WithLabelValues("config_error").Inc()
 		return nil, clientConfig.Error
+	}
+
+	// Validate before any connection or ServiceAccount token mint.
+	if vaultConfig.AddrFromObject {
+		if err := common.ValidateObjectAddr(vaultConfig.Addr, vaultAddrPolicy()); err != nil {
+			vaultAuthAttemptsErrorsCount.WithLabelValues("config_error").Inc()
+			return nil, errors.Wrap(err, "rejected Vault address from object annotation")
+		}
 	}
 
 	clientConfig.Address = vaultConfig.Addr

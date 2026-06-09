@@ -30,6 +30,7 @@ import (
 // VaultConfig represents vault options
 type VaultConfig struct {
 	Addr                          string
+	AddrFromObject                bool
 	AuthMethod                    string
 	Role                          string
 	Path                          string
@@ -106,6 +107,7 @@ func parseVaultConfig(obj metav1.Object, ar *model.AdmissionReview) VaultConfig 
 
 	if val, ok := annotations[common.VaultAddrAnnotation]; ok {
 		vaultConfig.Addr = val
+		vaultConfig.AddrFromObject = true
 	} else {
 		vaultConfig.Addr = viper.GetString("vault_addr")
 	}
@@ -145,7 +147,7 @@ func parseVaultConfig(obj metav1.Object, ar *model.AdmissionReview) VaultConfig 
 	}
 
 	if val, ok := annotations[common.VaultSkipVerifyAnnotation]; ok {
-		vaultConfig.SkipVerify, _ = strconv.ParseBool(val)
+		vaultConfig.SkipVerify = common.ResolveObjectSkipVerify(val, "vault_allow_object_skip_verify", "vault_skip_verify")
 	} else {
 		vaultConfig.SkipVerify = viper.GetBool("vault_skip_verify")
 	}
@@ -473,6 +475,9 @@ func SetConfigDefaults() {
 	viper.SetDefault("vault_ct_pull_policy", string(corev1.PullIfNotPresent))
 	viper.SetDefault("vault_addr", "https://vault:8200")
 	viper.SetDefault("vault_skip_verify", "false")
+	viper.SetDefault("vault_addr_allowlist", "")
+	viper.SetDefault("vault_allow_object_skip_verify", "false")
+	viper.SetDefault("vault_allow_private_addr", "false")
 	viper.SetDefault("vault_path", "kubernetes")
 	viper.SetDefault("vault_auth_method", "jwt")
 	viper.SetDefault("vault_role", "")
