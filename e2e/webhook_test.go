@@ -257,7 +257,50 @@ func TestPodMutation(t *testing.T) {
 		}).
 		Feature()
 
-	testenv.Test(t, deployment, deploymentSeccontext, deploymentTemplating, deploymentInitSeccontext)
+	deploymentInitVaultAgentSeccontext := applyResource(features.New("deployment-init-useagent-seccontext"), "deployment-init-useagent-seccontext.yaml").
+		Assess("available", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+			deployment := &appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{Name: "test-deployment-init-useagent-seccontext", Namespace: cfg.Namespace()},
+			}
+
+			// wait for the deployment to become available
+			err := wait.For(conditions.New(cfg.Client().Resources()).DeploymentConditionMatch(deployment, appsv1.DeploymentAvailable, v1.ConditionTrue), wait.WithTimeout(2*time.Minute))
+			require.NoError(t, err)
+
+			return ctx
+		}).
+		Assess("security context has correct capabilities and init containers executed successfully", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+			r := cfg.Client().Resources()
+
+			pods := &v1.PodList{}
+
+			err := r.List(ctx, pods, resources.WithLabelSelector("app.kubernetes.io/name=test-deployment-init-useagent-seccontext"))
+			require.NoError(t, err)
+
+			if pods == nil || len(pods.Items) == 0 {
+				t.Fatal("no pods found")
+			}
+
+			// wait for the container to become available
+			err = wait.For(conditions.New(r).ContainersReady(&pods.Items[0]), wait.WithTimeout(2*time.Minute))
+			require.NoError(t, err)
+
+			securityContext := pods.Items[0].Spec.InitContainers[0].SecurityContext
+
+			require.NotNil(t, securityContext.RunAsNonRoot)
+			assert.Equal(t, true, *securityContext.RunAsNonRoot)
+			require.NotNil(t, securityContext.RunAsUser)
+			assert.Equal(t, int64(1000), *securityContext.RunAsUser)
+			require.NotNil(t, securityContext.RunAsGroup)
+			assert.Equal(t, int64(1000), *securityContext.RunAsGroup)
+
+			require.NotNil(t, securityContext.Capabilities)
+			assert.Equal(t, []v1.Capability{"CHOWN", "SETFCAP", "SETGID", "SETPCAP", "SETUID", "IPC_LOCK"}, securityContext.Capabilities.Add)
+			return ctx
+		}).
+		Feature()
+
+	testenv.Test(t, deployment, deploymentSeccontext, deploymentTemplating, deploymentInitSeccontext, deploymentInitVaultAgentSeccontext)
 }
 
 func applyResource(builder *features.FeatureBuilder, file string) *features.FeatureBuilder {
