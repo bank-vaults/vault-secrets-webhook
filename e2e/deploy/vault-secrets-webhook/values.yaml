@@ -1,5 +1,6 @@
 env:
   VAULT_IMAGE: hashicorp/vault:2.0.1
+  VAULT_ADDR_ALLOWLIST: "https://vault.default.svc.cluster.local:8200"
 
 replicaCount: 1
 
