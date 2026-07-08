@@ -51,7 +51,10 @@ type MutatingWebhook struct {
 }
 
 func (mw *MutatingWebhook) VaultSecretsMutator(ctx context.Context, ar *model.AdmissionReview, obj metav1.Object) (*mutating.MutatorResult, error) {
-	vaultConfig := parseVaultConfig(obj, ar)
+	vaultConfig, err := parseVaultConfig(obj, ar)
+	if err != nil {
+		return &mutating.MutatorResult{}, err
+	}
 
 	if vaultConfig.Skip {
 		return &mutating.MutatorResult{}, nil
@@ -212,14 +215,6 @@ func (mw *MutatingWebhook) newVaultClient(ctx context.Context, vaultConfig Vault
 	if clientConfig.Error != nil {
 		vaultAuthAttemptsErrorsCount.WithLabelValues("config_error").Inc()
 		return nil, clientConfig.Error
-	}
-
-	// Validate before any connection or ServiceAccount token mint.
-	if vaultConfig.AddrFromObject {
-		if err := common.ValidateObjectAddr(vaultConfig.Addr, vaultAddrPolicy()); err != nil {
-			vaultAuthAttemptsErrorsCount.WithLabelValues("config_error").Inc()
-			return nil, errors.Wrap(err, "rejected Vault address from object annotation")
-		}
 	}
 
 	clientConfig.Address = vaultConfig.Addr
