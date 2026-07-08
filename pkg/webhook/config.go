@@ -18,6 +18,7 @@ import (
 	"strconv"
 	"time"
 
+	"emperror.dev/errors"
 	"github.com/slok/kubewebhook/v2/pkg/model"
 	"github.com/spf13/viper"
 	corev1 "k8s.io/api/core/v1"
@@ -92,7 +93,7 @@ type VaultConfig struct {
 	Token                         string
 }
 
-func parseVaultConfig(obj metav1.Object, ar *model.AdmissionReview) VaultConfig {
+func parseVaultConfig(obj metav1.Object, ar *model.AdmissionReview) (VaultConfig, error) {
 	vaultConfig := VaultConfig{
 		ObjectNamespace: ar.Namespace,
 	}
@@ -102,7 +103,7 @@ func parseVaultConfig(obj metav1.Object, ar *model.AdmissionReview) VaultConfig 
 	if val := annotations[common.MutateAnnotation]; val == "skip" {
 		vaultConfig.Skip = true
 
-		return vaultConfig
+		return vaultConfig, nil
 	}
 
 	if val, ok := annotations[common.VaultAddrAnnotation]; ok {
@@ -110,6 +111,12 @@ func parseVaultConfig(obj metav1.Object, ar *model.AdmissionReview) VaultConfig 
 		vaultConfig.AddrFromObject = true
 	} else {
 		vaultConfig.Addr = viper.GetString("vault_addr")
+	}
+
+	if vaultConfig.AddrFromObject {
+		if err := common.ValidateObjectAddr(vaultConfig.Addr, vaultAddrPolicy()); err != nil {
+			return vaultConfig, errors.Wrap(err, "rejected Vault address from object annotation")
+		}
 	}
 
 	if val, ok := annotations[common.VaultRoleAnnotation]; ok {
@@ -450,7 +457,7 @@ func parseVaultConfig(obj metav1.Object, ar *model.AdmissionReview) VaultConfig 
 
 	vaultConfig.Token = viper.GetString("vault_token")
 
-	return vaultConfig
+	return vaultConfig, nil
 }
 
 func getPullPolicy(pullPolicyStr string) corev1.PullPolicy {

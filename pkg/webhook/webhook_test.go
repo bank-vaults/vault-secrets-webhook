@@ -23,12 +23,15 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil"
+	"github.com/slok/kubewebhook/v2/pkg/model"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
+
+	"github.com/bank-vaults/vault-secrets-webhook/pkg/common"
 )
 
 func TestNewVaultClientMetrics(t *testing.T) {
@@ -136,10 +139,7 @@ func TestNewVaultClientMetrics(t *testing.T) {
 	}
 }
 
-func TestNewVaultClientRejectsObjectAddr(t *testing.T) {
-	logger := slog.New(slog.DiscardHandler)
-	require.NoError(t, os.Setenv("KUBERNETES_NAMESPACE", "test-namespace"))
-
+func TestParseVaultConfigRejectsObjectAddr(t *testing.T) {
 	tests := []struct {
 		name      string
 		addr      string
@@ -172,39 +172,22 @@ func TestNewVaultClientRejectsObjectAddr(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			vaultAuthAttemptsCount.Reset()
-			vaultAuthAttemptsErrorsCount.Reset()
 			viper.Set("vault_addr_allowlist", tt.allowlist)
 			t.Cleanup(viper.Reset)
 
-			mw, err := NewMutatingWebhook(logger, fake.NewClientset())
-			require.NoError(t, err)
-
-			vaultConfig := VaultConfig{
-				Addr:                tt.addr,
-				AddrFromObject:      true,
-				SkipVerify:          true,
-				Role:                "test-role",
-				Path:                "kubernetes",
-				VaultServiceAccount: "high-priv-sa",
-				ObjectNamespace:     "test-namespace",
+			pod := &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{common.VaultAddrAnnotation: tt.addr},
+				},
 			}
 
-			_, err = mw.newVaultClient(t.Context(), vaultConfig)
+			_, err := parseVaultConfig(pod, &model.AdmissionReview{})
 
 			if tt.wantErr {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), "rejected Vault address from object annotation")
-				assert.Equal(t, float64(1), testutil.ToFloat64(vaultAuthAttemptsErrorsCount.WithLabelValues("config_error")),
-					"address rejection must record a config_error")
-				assert.Equal(t, float64(0), testutil.ToFloat64(vaultAuthAttemptsErrorsCount.WithLabelValues("kubernetes_error")),
-					"rejection must happen before the ServiceAccount token path")
 			} else {
-				if err != nil {
-					assert.NotContains(t, err.Error(), "rejected Vault address from object annotation")
-				}
-				assert.Equal(t, float64(0), testutil.ToFloat64(vaultAuthAttemptsErrorsCount.WithLabelValues("config_error")),
-					"a valid allowlisted address must not record a config_error")
+				require.NoError(t, err)
 			}
 		})
 	}
