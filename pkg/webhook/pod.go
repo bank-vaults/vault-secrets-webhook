@@ -21,12 +21,9 @@ import (
 	"strconv"
 	"strings"
 
-	"emperror.dev/errors"
 	injector "github.com/bank-vaults/vault-sdk/injector/vault"
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeVer "k8s.io/apimachinery/pkg/version"
 
 	"github.com/bank-vaults/vault-secrets-webhook/pkg/common"
@@ -168,21 +165,13 @@ func (mw *MutatingWebhook) MutatePod(ctx context.Context, pod *corev1.Pod, vault
 			if vaultConfig.AgentConfigMap != "" {
 				agentConfigMapName = vaultConfig.AgentConfigMap
 			} else {
-				configMap := getConfigMapForVaultAgent(pod, vaultConfig)
-				agentConfigMapName = configMap.Name
-				if !dryRun {
-					_, err := mw.k8sClient.CoreV1().ConfigMaps(vaultConfig.ObjectNamespace).Create(ctx, configMap, metav1.CreateOptions{})
-					if err != nil {
-						if apierrors.IsAlreadyExists(err) {
-							_, err = mw.k8sClient.CoreV1().ConfigMaps(vaultConfig.ObjectNamespace).Update(ctx, configMap, metav1.UpdateOptions{})
-							if err != nil {
-								return errors.WrapIf(err, "failed to update ConfigMap for config")
-							}
-						} else {
-							return errors.WrapIf(err, "failed to create ConfigMap for config")
-						}
-					}
+				// Keep the generated config on the pod itself instead of in a ConfigMap, so it goes
+				// away with the pod. A ConfigMap can't be owned by the pod here, because the pod has
+				// no UID yet when it's being admitted.
+				if pod.Annotations == nil {
+					pod.Annotations = map[string]string{}
 				}
+				pod.Annotations[common.VaultAgentGeneratedConfigAnnotation] = getVaultAgentConfig(vaultConfig)
 			}
 		}
 
@@ -520,15 +509,29 @@ func (mw *MutatingWebhook) getVolumes(existingVolumes []corev1.Volume, agentConf
 
 	if vaultConfig.UseAgent || vaultConfig.CtConfigMap != "" {
 		mw.logger.Debug("Add vault agent volumes to podspec")
-		volumes = append(volumes, corev1.Volume{
-			Name: "vault-agent-config",
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: agentConfigMapName,
-					},
+		volumeSource := corev1.VolumeSource{
+			ConfigMap: &corev1.ConfigMapVolumeSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: agentConfigMapName,
 				},
 			},
+		}
+		if agentConfigMapName == "" {
+			// No configmap was given, so mount the generated config from the pod annotation.
+			volumeSource = corev1.VolumeSource{
+				DownwardAPI: &corev1.DownwardAPIVolumeSource{
+					Items: []corev1.DownwardAPIVolumeFile{{
+						Path: "config.hcl",
+						FieldRef: &corev1.ObjectFieldSelector{
+							FieldPath: fmt.Sprintf("metadata.annotations['%s']", common.VaultAgentGeneratedConfigAnnotation),
+						},
+					}},
+				},
+			}
+		}
+		volumes = append(volumes, corev1.Volume{
+			Name:         "vault-agent-config",
+			VolumeSource: volumeSource,
 		})
 	}
 
@@ -911,30 +914,8 @@ func getBaseSecurityContext(podSecurityContext *corev1.PodSecurityContext, vault
 	return context
 }
 
-func getConfigMapForVaultAgent(pod *corev1.Pod, vaultConfig VaultConfig) *corev1.ConfigMap {
-	ownerReferences := pod.GetOwnerReferences()
-	name := pod.GetName()
-	// If we have no name we are probably part of some controller,
-	// try to get the name of the owner controller.
-	if name == "" {
-		if len(ownerReferences) > 0 {
-			if strings.Contains(ownerReferences[0].Name, "-") {
-				generateNameSlice := strings.Split(ownerReferences[0].Name, "-")
-				name = strings.Join(generateNameSlice[:len(generateNameSlice)-1], "-")
-			} else {
-				name = ownerReferences[0].Name
-			}
-		}
-	}
-	return &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:            name + "-vault-agent-config",
-			OwnerReferences: ownerReferences,
-		},
-		Data: map[string]string{
-			"config.hcl": fmt.Sprintf(vaultAgentConfig, vaultConfig.VaultNamespace, vaultConfig.Path, vaultConfig.Role),
-		},
-	}
+func getVaultAgentConfig(vaultConfig VaultConfig) string {
+	return fmt.Sprintf(vaultAgentConfig, vaultConfig.VaultNamespace, vaultConfig.Path, vaultConfig.Role)
 }
 
 // isLogLevelSet checks if the VAULT_LOG_LEVEL environment variable
