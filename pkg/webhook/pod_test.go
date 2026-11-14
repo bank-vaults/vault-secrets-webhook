@@ -24,8 +24,11 @@ import (
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	fake "k8s.io/client-go/kubernetes/fake"
+
+	"github.com/bank-vaults/vault-secrets-webhook/pkg/common"
 )
 
 var vaultConfig = VaultConfig{
@@ -844,6 +847,11 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 				},
 			},
 			wantedPod: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						common.VaultAgentGeneratedConfigAnnotation: getVaultAgentConfig(VaultConfig{}),
+					},
+				},
 				Spec: corev1.PodSpec{
 					InitContainers: []corev1.Container{
 						{
@@ -957,10 +965,13 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 						{
 							Name: "vault-agent-config",
 							VolumeSource: corev1.VolumeSource{
-								ConfigMap: &corev1.ConfigMapVolumeSource{
-									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "-vault-agent-config",
-									},
+								DownwardAPI: &corev1.DownwardAPIVolumeSource{
+									Items: []corev1.DownwardAPIVolumeFile{{
+										Path: "config.hcl",
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.annotations['" + common.VaultAgentGeneratedConfigAnnotation + "']",
+										},
+									}},
 								},
 							},
 						},
@@ -1041,6 +1052,11 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 				},
 			},
 			wantedPod: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						common.VaultAgentGeneratedConfigAnnotation: getVaultAgentConfig(VaultConfig{}),
+					},
+				},
 				Spec: corev1.PodSpec{
 					InitContainers: []corev1.Container{
 						{
@@ -1154,10 +1170,13 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 						{
 							Name: "vault-agent-config",
 							VolumeSource: corev1.VolumeSource{
-								ConfigMap: &corev1.ConfigMapVolumeSource{
-									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "-vault-agent-config",
-									},
+								DownwardAPI: &corev1.DownwardAPIVolumeSource{
+									Items: []corev1.DownwardAPIVolumeFile{{
+										Path: "config.hcl",
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.annotations['" + common.VaultAgentGeneratedConfigAnnotation + "']",
+										},
+									}},
 								},
 							},
 						},
@@ -1405,6 +1424,11 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 				},
 			},
 			wantedPod: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						common.VaultAgentGeneratedConfigAnnotation: getVaultAgentConfig(VaultConfig{}),
+					},
+				},
 				Spec: corev1.PodSpec{
 					InitContainers: []corev1.Container{
 						{
@@ -1530,10 +1554,13 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 						{
 							Name: "vault-agent-config",
 							VolumeSource: corev1.VolumeSource{
-								ConfigMap: &corev1.ConfigMapVolumeSource{
-									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "-vault-agent-config",
-									},
+								DownwardAPI: &corev1.DownwardAPIVolumeSource{
+									Items: []corev1.DownwardAPIVolumeFile{{
+										Path: "config.hcl",
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.annotations['" + common.VaultAgentGeneratedConfigAnnotation + "']",
+										},
+									}},
 								},
 							},
 						},
@@ -1627,6 +1654,11 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 				},
 			},
 			wantedPod: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						common.VaultAgentGeneratedConfigAnnotation: getVaultAgentConfig(VaultConfig{}),
+					},
+				},
 				Spec: corev1.PodSpec{
 					InitContainers: []corev1.Container{
 						{
@@ -1751,10 +1783,13 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 						{
 							Name: "vault-agent-config",
 							VolumeSource: corev1.VolumeSource{
-								ConfigMap: &corev1.ConfigMapVolumeSource{
-									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "-vault-agent-config",
-									},
+								DownwardAPI: &corev1.DownwardAPIVolumeSource{
+									Items: []corev1.DownwardAPIVolumeFile{{
+										Path: "config.hcl",
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.annotations['" + common.VaultAgentGeneratedConfigAnnotation + "']",
+										},
+									}},
 								},
 							},
 						},
