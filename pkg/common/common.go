@@ -96,6 +96,10 @@ const (
 	VaultConsuleTemplateInjectInInitcontainersAnnotation = "vault.security.banzaicloud.io/vault-ct-inject-in-initcontainers"
 )
 
+// VaultAgentGeneratedConfigAnnotation holds the vault-agent config the webhook generates when no
+// configmap is given. The webhook sets it and the pod mounts it through the downward API.
+const VaultAgentGeneratedConfigAnnotation = "vault.security.banzaicloud.io/vault-agent-generated-config"
+
 func HasVaultPrefix(value string) bool {
 	return strings.HasPrefix(value, "vault:") || strings.HasPrefix(value, ">>vault:")
 }
