@@ -51,6 +51,7 @@ const (
 	VaultPathAnnotation                     = "vault.security.banzaicloud.io/vault-path"
 	VaultSkipVerifyAnnotation               = "vault.security.banzaicloud.io/vault-skip-verify"
 	VaultTLSSecretAnnotation                = "vault.security.banzaicloud.io/vault-tls-secret"
+	VaultTLSSecretScopeAnnotation           = "vault.security.banzaicloud.io/vault-tls-secret-scope"
 	VaultIgnoreMissingSecretsAnnotation     = "vault.security.banzaicloud.io/vault-ignore-missing-secrets"
 	VaultClientTimeoutAnnotation            = "vault.security.banzaicloud.io/vault-client-timeout"
 	TransitKeyIDAnnotation                  = "vault.security.banzaicloud.io/transit-key-id"

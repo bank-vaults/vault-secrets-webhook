@@ -19,6 +19,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strconv"
 	"testing"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -29,6 +30,7 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"
 
 	"github.com/bank-vaults/vault-secrets-webhook/pkg/common"
@@ -189,6 +191,108 @@ func TestParseVaultConfigRejectsObjectAddr(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 			}
+		})
+	}
+}
+
+func TestVaultTLSSecretNamespace(t *testing.T) {
+	const (
+		webhookNamespace = "webhook"
+		objectNamespace  = "workload"
+		secretName       = "vault-ca"
+	)
+
+	for _, tt := range []struct {
+		name, scope, namespace, secretName string
+		enabled, localSecretExists, pod    bool
+		wantNamespace, wantError           string
+	}{
+		{
+			name: "defaults to webhook namespace", namespace: objectNamespace, enabled: true,
+			wantNamespace: webhookNamespace, wantError: "error loading Vault CA PEM",
+		},
+		{
+			name: "selects object namespace", scope: "object", namespace: objectNamespace,
+			enabled: true, localSecretExists: true,
+			wantNamespace: objectNamespace, wantError: "error loading Vault CA PEM",
+		},
+		{
+			name: "missing local Secret does not fall back", scope: "object",
+			namespace: objectNamespace, enabled: true,
+			wantNamespace: objectNamespace, wantError: "failed to read Vault TLS Secret workload/vault-ca",
+		},
+		{
+			name: "requires administrator opt-in", scope: "object", namespace: objectNamespace,
+			wantError: "require VAULT_ALLOW_OBJECT_TLS_SECRET_NAMESPACE",
+		},
+		{
+			name: "rejects cluster scoped objects", scope: "object", enabled: true,
+			wantError: "require a namespaced object",
+		},
+		{
+			name: "rejects arbitrary scope", scope: "other", namespace: objectNamespace, enabled: true,
+			wantError: "expected object",
+		},
+		{
+			name: "rejects qualified Secret name", scope: "object", namespace: objectNamespace,
+			secretName: "other/vault-ca", enabled: true, wantError: "must specify a valid Secret name",
+		},
+		{
+			name: "Pod configuration does not require opt-in", scope: "object", namespace: objectNamespace,
+			pod: true,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			SetConfigDefaults()
+			t.Cleanup(viper.Reset)
+			t.Setenv("VAULT_ALLOW_OBJECT_TLS_SECRET_NAMESPACE", strconv.FormatBool(tt.enabled))
+
+			name := tt.secretName
+			if name == "" {
+				name = secretName
+			}
+			meta := metav1.ObjectMeta{Annotations: map[string]string{common.VaultTLSSecretAnnotation: name}}
+			if tt.scope != "" {
+				meta.Annotations[common.VaultTLSSecretScopeAnnotation] = tt.scope
+			}
+			var obj metav1.Object = &corev1.Secret{ObjectMeta: meta}
+			if tt.pod {
+				obj = &corev1.Pod{ObjectMeta: meta}
+			}
+
+			config, err := parseVaultConfig(obj, &model.AdmissionReview{Namespace: tt.namespace})
+			if tt.pod {
+				require.NoError(t, err)
+				assert.Equal(t, secretName, config.TLSSecret)
+				assert.Empty(t, config.TLSSecretNamespace)
+				return
+			}
+			if tt.wantNamespace == "" {
+				require.ErrorContains(t, err, tt.wantError)
+				return
+			}
+			require.NoError(t, err)
+
+			// Invalid CA data stops client setup after the lookup, before Vault auth.
+			newCASecret := func(namespace string) *corev1.Secret {
+				return &corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{Name: secretName, Namespace: namespace},
+					Data:       map[string][]byte{"ca.crt": []byte("invalid PEM")},
+				}
+			}
+			secrets := []runtime.Object{newCASecret(webhookNamespace)}
+			if tt.localSecretExists {
+				secrets = append(secrets, newCASecret(objectNamespace))
+			}
+			k8sClient := fake.NewClientset(secrets...)
+			mw := &MutatingWebhook{k8sClient: k8sClient, namespace: webhookNamespace}
+
+			_, err = mw.newVaultClient(t.Context(), config)
+			require.ErrorContains(t, err, tt.wantError)
+			actions := k8sClient.Actions()
+			require.Len(t, actions, 1)
+			assert.True(t, actions[0].Matches("get", "secrets"))
+			assert.Equal(t, tt.wantNamespace, actions[0].GetNamespace())
 		})
 	}
 }

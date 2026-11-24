@@ -84,6 +84,7 @@ env: {}
   ## -- Object-annotation hardening
   # VAULT_ADDR_ALLOWLIST: "https://vault.prod.svc:8200,https://vault.dr.svc:8200"
   # VAULT_ALLOW_OBJECT_SKIP_VERIFY: "false"
+  # VAULT_ALLOW_OBJECT_TLS_SECRET_NAMESPACE: "false"
   # VAULT_ALLOW_PRIVATE_ADDR: "false"
 
   ## -- Used when the pod that should get secret injected does not specify an imagePullSecret

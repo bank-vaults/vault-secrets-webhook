@@ -24,6 +24,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/validation"
 
 	"github.com/bank-vaults/vault-secrets-webhook/pkg/common"
 )
@@ -37,6 +38,7 @@ type VaultConfig struct {
 	Path                          string
 	SkipVerify                    bool
 	TLSSecret                     string
+	TLSSecretNamespace            string
 	ClientTimeout                 time.Duration
 	UseAgent                      bool
 	VaultEnvDaemon                bool
@@ -163,6 +165,25 @@ func parseVaultConfig(obj metav1.Object, ar *model.AdmissionReview) (VaultConfig
 		vaultConfig.TLSSecret = val
 	} else {
 		vaultConfig.TLSSecret = viper.GetString("vault_tls_secret")
+	}
+
+	// Pod volumes already resolve Secret references in the Pod's namespace.
+	_, isPod := obj.(*corev1.Pod)
+	if scope, ok := annotations[common.VaultTLSSecretScopeAnnotation]; ok && !isPod {
+		switch {
+		case scope != "object":
+			return vaultConfig, errors.Errorf("unsupported %s value %q: expected object", common.VaultTLSSecretScopeAnnotation, scope)
+		case !viper.GetBool("vault_allow_object_tls_secret_namespace"):
+			return vaultConfig, errors.New("object namespace TLS Secrets require VAULT_ALLOW_OBJECT_TLS_SECRET_NAMESPACE")
+		case vaultConfig.ObjectNamespace == "":
+			return vaultConfig, errors.New("object namespace TLS Secrets require a namespaced object")
+		}
+
+		name := annotations[common.VaultTLSSecretAnnotation]
+		if len(validation.IsDNS1123Subdomain(name)) != 0 {
+			return vaultConfig, errors.Errorf("%s must specify a valid Secret name when %s is object", common.VaultTLSSecretAnnotation, common.VaultTLSSecretScopeAnnotation)
+		}
+		vaultConfig.TLSSecretNamespace = vaultConfig.ObjectNamespace
 	}
 
 	if val, ok := annotations[common.VaultClientTimeoutAnnotation]; ok {
@@ -489,6 +510,7 @@ func SetConfigDefaults() {
 	viper.SetDefault("vault_auth_method", "jwt")
 	viper.SetDefault("vault_role", "")
 	viper.SetDefault("vault_tls_secret", "")
+	viper.SetDefault("vault_allow_object_tls_secret_namespace", false)
 	viper.SetDefault("vault_client_timeout", "10s")
 	viper.SetDefault("vault_agent", "false")
 	viper.SetDefault("vault_env_daemon", "false")
