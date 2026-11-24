@@ -227,14 +227,18 @@ func (mw *MutatingWebhook) newVaultClient(ctx context.Context, vaultConfig Vault
 	}
 
 	if vaultConfig.TLSSecret != "" {
-		tlsSecret, err := mw.k8sClient.CoreV1().Secrets(mw.namespace).Get(
+		namespace := vaultConfig.TLSSecretNamespace
+		if namespace == "" {
+			namespace = mw.namespace
+		}
+		tlsSecret, err := mw.k8sClient.CoreV1().Secrets(namespace).Get(
 			ctx,
 			vaultConfig.TLSSecret,
 			metav1.GetOptions{},
 		)
 		if err != nil {
 			vaultAuthAttemptsErrorsCount.WithLabelValues("kubernetes_error").Inc()
-			return nil, errors.Wrap(err, "failed to read Vault TLS Secret")
+			return nil, errors.Wrapf(err, "failed to read Vault TLS Secret %s/%s", namespace, vaultConfig.TLSSecret)
 		}
 
 		clientTLSConfig := clientConfig.HttpClient.Transport.(*http.Transport).TLSClientConfig
@@ -244,7 +248,7 @@ func (mw *MutatingWebhook) newVaultClient(ctx context.Context, vaultConfig Vault
 		ok := pool.AppendCertsFromPEM(tlsSecret.Data["ca.crt"])
 		if !ok {
 			vaultAuthAttemptsErrorsCount.WithLabelValues("config_error").Inc()
-			return nil, errors.Errorf("error loading Vault CA PEM from TLS Secret: %s", tlsSecret.Name)
+			return nil, errors.Errorf("error loading Vault CA PEM from TLS Secret %s/%s", namespace, tlsSecret.Name)
 		}
 
 		clientTLSConfig.RootCAs = pool
